@@ -1,0 +1,744 @@
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+.wrap{
+  width: 1024px;
+  margin: 0 auto;
+  --font-family-sans-serif: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+  --font-family-monospace : SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  position: relative;
+}
+
+.headerIndex{
+  background-image: url(../images/index.png);
+  height: 560px;
+}
+.headerCourse{
+  background-image: url(../images/course.png);
+  height: 560px;
+}
+.headerFaq{
+  background-image: url(../images/QA.png);
+  height: 560px;
+}
+
+
+
+
+.nav{
+
+  height: 60px;
+  background-color:rgba(53,53,53,0.5);
+}
+
+
+.nav h1 a {
+  background-image: url(../images/logo.png);
+  margin: 10px;
+  float: left;
+  width: 182px;
+  height: 36px;
+  display:block;
+  text-indent: 101%;
+  overflow: hidden;
+  white-space: nowrap;
+  background-repeat: no-repeat;
+}
+
+.nav img{
+  padding: 10px;
+}
+
+.menu{
+  float: right;
+  
+}
+
+.menu li{
+  float: left;
+  padding: 15px;
+  margin-right: 15px;
+  margin-top: 8px;
+  list-style: none;
+}
+
+.menu a{
+  color: white;
+  text-decoration: none;
+}
+
+.menu a:hover{
+  color: rgb(0,204,153);
+  border-bottom: 5px solid #00DDAA;
+  cursor: pointer;
+}
+
+.slogan{
+  margin-top: 110px;
+  margin-left: 30px;
+}
+
+.slogan p,.slogan span{
+  font-size: 48px;
+  margin-bottom: 40px;
+}
+
+.slogan p{
+  color: white;
+}
+.slogan span{
+  color: rgb(0,204,153);
+}
+
+.slogan button{
+  height: 50px;
+  width: 210px;
+  color: white;
+  font-size: 20px;
+  border-radius: 5px;
+  margin-top: 10px;
+  background-color: rgb(0,204,153);
+  border: solid 0px rgb(0,204,153);
+}
+
+.slogan button:hover{
+  background-color: white;
+  color: black;
+}
+
+/*這條線以上是index-header設定*/
+
+.content{
+  padding: 30px;
+  position: relative;
+}
+
+.feture{
+  padding-right: 20px;
+  position: absolute;
+  left: -20px;
+}
+
+.feture span{
+  color: rgb(0,204,153);
+  font-size: 36px;
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+.feture p{
+  font-size: 20px;
+  color: rgb(155,155,155);
+  margin-left: 20px;
+}
+
+.feture button{
+  width: 80px;
+  height: 30px;
+  border-radius: 5px;
+  border: solid 3px rgb(0,204,153);
+  background-color: white;
+  font-weight: 700;
+  color: rgb(0,204,153);
+  text-align: center;
+  line-height: 15px;
+  position: absolute;
+  right: -570px;
+  top: 10px;
+}
+
+.html, .rwd, .jquery{
+  width: 290px;
+  height: 270px;
+  border: solid 1px rgba(180,174,174,0.9);
+  box-shadow: ;
+  padding: 10px;
+}
+
+.html img, .rwd img, .jquery img{
+  display: block;
+  margin: auto;
+  margin-bottom: 10px;
+  margin-top: 20px;
+}
+
+.html h3, .rwd h3, .jquery h3{
+  text-align: center;
+  font-size: 22px;
+  color: #4a4a4a;
+  margin: 20px 0px 20px 0px;
+}
+
+.html p,.rwd p, .jquery p{
+  text-align: left;
+  font-size: 18px;
+  color: #9b9b9b;
+}
+ 
+
+.html{
+  position: absolute;  /*三個框框都是定位在content內*/
+  left:30px;
+  top:100px;
+}
+
+.rwd{
+  position: absolute;
+  left: 370px;
+  top: 100px;
+}
+
+.jquery{
+  position: absolute;
+  left: 710px;
+  top: 100px;
+}
+
+
+.comparison span{
+  color: rgb(0,204,153);
+  font-size: 36px;
+  font-weight: 700;
+  margin-right: 10px;
+}
+
+.comparison p{
+  font-size: 20px;
+  color: rgb(155,155,155);
+  position: absolute;
+  top: 450px;
+  left: 0px;
+}
+
+.comparison table{
+  position: absolute;
+  top: 520px;
+  right: 25px;
+  margin-bottom: 50px;
+}
+
+.comparison th{
+  background-color: #f7f7f7;
+  font-weight: 400;
+  padding:10px 90px 10px 30px;
+  white-space: nowrap;
+}
+
+.comparison td{
+  padding:10px 90px 10px 30px;
+  white-space: nowrap;
+}
+
+.comparison th, .comparison td{
+  border-top: solid 2px #dddddd;
+  border-bottom: solid 2px #dddddd;
+  font-size: 20px;
+  text-align: center;
+}
+
+.gr{
+  color: #00a67d;
+}
+
+.sign{
+  height: 300px;
+  width: 1024px;
+  background-color: #ebebeb;
+  position: absolute;
+  right: 30px;
+  top: 730px;
+
+  position: relative; /*提供給input定位*/
+}
+
+.sign p{
+  font-size: 30px;
+  font-weight: 400;
+  margin-bottom: 30px;
+}
+
+.up{
+  margin:90px 0px 0px 40px;
+  padding: 100px 0px 0px 30px;
+
+  
+
+}
+
+#person, #mail{
+  width: 400px;
+  height: 30px;
+  border-radius: 5px;
+  border: solid 0px;
+  padding: 5px 0px 5px 10px;
+  font-size: 16px;
+}
+
+#person{
+  position: absolute;
+  top: 100px;
+  right: 60px;
+}
+
+#mail{
+  position: absolute;
+  top: 150px;
+  right: 60px;
+}
+
+#send{
+  text-align: center;
+  text-indent: 15px;
+  letter-spacing: 10px;
+  margin: 5px;
+  background-color: #00cc99;
+  border-radius: 5px;
+  width: 100px;
+  height: 40px;
+  font-size: 16px;
+  color: white;
+  font-weight: 400;
+  position: absolute;
+  right: 60px;
+  top: 200px;
+}
+
+
+/*這條線以上是index-content設定*/
+
+.footer{
+  width: 1024px;
+  height: 100px;
+  background-color: #323228;
+  position: absolute;
+  top: 1680px;
+}
+
+.logo{
+  margin:30px 0px 0px 20px;
+}
+
+.fb{
+  margin:30px 10px 0px 650px;
+}
+
+.tw,.ig{
+  margin: 30px 10px 0px 5px;
+}
+/*這條線以上是index-footer設定*/
+
+.slogan2{
+  margin:140px 0px 0px 30px;
+  position: relative;
+}
+
+.slogan2 p{
+  font-size: 48px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.slogan2 span{
+  font-size: 25px;
+  color: #00cc99;
+}
+
+#logo1{
+  position: absolute;
+  top: -100px;
+  right: 150px;
+}
+
+#logo2{
+  position: absolute;
+  top: -100px;
+  right: 30px;
+}
+
+.slogan2 button{
+  height: 50px;
+  width: 210px;
+  color: white;
+  font-size: 20px;
+  border-radius: 5px;
+  margin-top: 10px;
+  background-color: rgb(0,204,153);
+  border: solid 0px ;
+  position: absolute;
+  top: 130px;
+  left: 5px;
+}
+
+.slogan2 button:hover{
+  background-color: white;
+  color: black;
+}
+
+/*這條線以上是course-header設定*/
+
+.teacher{
+  position: relative;
+}
+
+.teacher img{
+  margin: 30px 10px 30px 150px;
+}
+
+.teacher span {
+  color: rgb(0,204,153);
+  font-size:30px;
+  font-weight: 500;
+  position: absolute;
+  top: 100px;
+  right: 450px;
+}
+
+.teacher p{
+  font-size: 30px;
+  position: absolute;
+  top: 140px;
+  right: 480px;
+}
+
+.teacher ul{
+  float: right;
+  padding: 80px 210px 0px 20px;
+}
+
+.teacher li{
+  line-height: 30px;
+  padding-left: 20px;
+  font-size: 16px;
+  color:gray;
+}
+
+.special{
+
+  margin: 30px 0px 0px 140px;
+  width: 640px;
+}
+
+.special span{
+  color: rgb(0,204,153);
+  font-size: 40px;
+  font-weight: 500;
+  margin-right: 15px;
+}
+
+.special p{
+  color: gray;
+  font-size: 18px;
+  margin-bottom: 30px;
+}
+
+.special ol{
+  margin-left: 20px;
+}
+
+.special li{
+  padding-left: 20px;
+  margin-bottom: 10px;
+  color: #323223;
+  line-height: 20px;
+  font-size: 14px;
+}
+
+.point{
+  margin: 50px 0px 90px 140px;
+}
+
+.point span {
+  color: rgb(0,204,153);
+  font-size: 40px;
+  font-weight: 500;
+  margin-right: 15px;
+}
+
+.point p{
+  color: gray;
+  font-size: 22px;
+  margin-bottom: 30px;
+}
+
+.point th{
+  color: #323223;
+  background-color: #ebebeb;
+  line-height: 50px;
+  text-align: left;
+  text-indent:50px; 
+}
+
+.point td{
+  color: gray;
+  line-height: 50px;
+  text-align: left;
+  text-indent:50px; 
+}
+
+.point th, .point td{
+  width: 650px;
+  height: 50px;
+}
+
+.regedit{
+  width: 1024px;
+  height: 350px;
+  background-color: #ebebeb;
+  position: absolute;
+  right: 0;
+}
+
+.regedit p{
+  font-size: 36px;
+  color: #323223;
+  line-height: 70px;
+}
+
+.join{
+  padding: 100px 0px 0px 160px;
+}
+
+.regedit button{
+  height: 50px;
+  width: 210px;
+  color: white;
+  font-size: 20px;
+  border-radius: 5px;
+  margin-top: 10px;
+  background-color: rgb(0,204,153);
+  border: solid 0px rgb(0,204,153);
+  position: absolute;
+  bottom: 150px;
+  right: 160px;
+}
+
+.regedit button:hover{
+  background-color: white;
+  color: black;
+}
+
+/*這條線以上是course-設定*/
+
+.footerCourse{
+  width: 1024px;
+  height: 100px;
+  background-color: #323228;
+  position: absolute;
+  top: 2212px;
+}
+
+/*這條線以上是course-footer設定*/
+
+.headerFaq{
+  position: relative;
+}
+
+.slogan3{
+  padding-top:130px;
+}
+
+.slogan3 p{
+  font-size: 40px;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.slogan3 span{
+  font-size: 24px;
+  color: rgb(0,204,153);
+  display: block;
+}
+
+.slogan3 p, .slogan3 span{
+   text-align: center;
+}
+
+.search{
+  width: 550px;
+  height: 35px;
+  border-radius: 5px;
+  border:0px;
+  margin: 50px 0px 0px 250px;
+}
+
+.searchimg{
+  position: absolute;
+  right: 235px;
+  top: 325px;
+}
+
+/*這條線以上是FAQ-header設定*/
+
+.question , .pay , .refund{
+  width: 850px;
+  margin-bottom: 40px;
+}
+
+.question .title , .pay .title , .refund .title {
+  color: rgb(0,204,153);
+  font-size: 36px;
+  margin-right: 20px;
+}
+
+.question p , .pay p , .refund p{
+  color: #9b9b9b;
+  line-height: 20px;
+}
+
+.question .q , .pay .q , .refund .q{
+  color: #323223;
+  margin-top: 30px;
+  line-height: 25px;
+  font-size: 20px;
+}
+
+.question p span , .pay p span , .refund p span{
+  color: rgb(0,204,153);
+  font-weight: 600;
+}
+
+.pay ol , .refund ul{
+  margin-left: 50px;
+}
+
+.pay li , .refund li{
+  line-height: 20px;
+  color: #9b9b9b;
+  padding-left: 20px;
+}
+
+#next{
+  color: #323228;
+}
+
+.FAQmail{
+  width: 1024px;
+  height: 500px;
+  background-color: #ebebeb;
+  margin-top: 60px;
+  position: relative;
+  position: absolute;
+  right: 0;
+}
+
+.FAQmail div{
+  padding: 120px 0px 0px 60px;
+}
+
+.FAQmail p{
+  font-size: 30px;
+  color: #323223;
+  margin-bottom: 20px;
+}
+
+.name , .mail{
+  width: 400px;
+  height: 30px;
+  border-radius: 5px;
+  border: solid 0px;
+  padding: 5px 0px 5px 10px;
+  font-size: 16px;
+  -webkit-transform:height:30px;
+  -webkit-transform:width:400px;
+  -moz-transform:height:30px;
+  -moz-transform:width:400px;
+  -ms-transform:height:30px;
+  -ms-transform:width:400px;
+  -o-transform:height:30px;
+  -o-transform:width:400px;
+}
+
+.name{
+  position: absolute;
+  top: 120px;
+  right: 50px;
+}
+
+.mail{
+  position: absolute;
+  top: 180px;
+  right: 50px;
+}
+
+.question_text{
+  position: absolute;
+  top: 240px;
+  right: 50px;
+  border-radius: 5px;
+  border: solid 0px;
+  padding: 5px 0px 5px 10px;
+  font-size: 16px;
+}
+
+.send{
+  text-align: center;
+  text-indent: 15px;
+  letter-spacing: 10px;
+  margin: 5px;
+  background-color: #00cc99;
+  border-radius: 5px;
+  width: 100px;
+  height: 40px;
+  font-size: 16px;
+  color: white;
+  font-weight: 400;
+  position: absolute;
+  top: 400px;
+  right: 45px;
+}
+
+/*這條線以上是FAQ-content設定*/
+
+.footer_FAQ{
+  width: 1024px;
+  height: 100px;
+  background-color: #323228;
+  position: absolute;
+  top: 2368px;
+}
+
+/*這條線以上是FAQ-footer設定*/
