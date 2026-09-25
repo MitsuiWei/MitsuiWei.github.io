@@ -16,6 +16,7 @@
 .account{display:flex;align-items:center;gap:12px}.account button{border:0;background:transparent;color:#315be8;font-size:13px;padding:7px 0}
 .delete-list{flex:none;align-self:start;border:1px solid #f1cad0;background:#fff;color:#a63043;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700}.delete-list:hover{background:#fff2f4}.delete-list:disabled{opacity:.5;cursor:default}
 .sidebar-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.sidebar-heading h1{margin-bottom:20px}.sidebar-heading .delete-list{white-space:nowrap;margin-bottom:14px;padding:7px 9px}
+.sort-hint{font-size:12px;color:#7a89a0;margin:15px 0 -12px}.list-entry{display:flex;align-items:stretch;gap:5px;min-width:0}.list-entry .list-tab{flex:1;min-width:0;max-width:none}.drag-handle{flex:none;align-self:stretch;border:0;border-radius:12px;background:transparent;color:#8a9ab7;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:20px;width:36px;padding:0}.drag-handle:active{cursor:grabbing}.drag-handle:focus-visible{outline:2px solid #315be8}.list-entry.dragging{opacity:.62}.list-entry.dragging .drag-handle{color:#315be8}@media(max-width:720px){.list-entry{flex:none;width:228px}.list-entry .list-tab{max-width:none}.sort-hint{margin:14px 0 0}.drag-handle{background:#eef2ff;color:#315be8}}
 
   </style>
   <title>一起勾｜多人清單</title>
@@ -61,7 +62,7 @@ function renderWorkspace() {
   const detail = state.detail;
   const items = detail?.items || [];
   const done = items.filter(item => item.done).length;
-  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></form><nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<button class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
+  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></form>${state.lists.length > 1 ? `<p class="sort-hint">按住清單右側的 ☰ 可拖曳排序</p>` : ""}<nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<div class="list-entry"><button type="button" class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button><button type="button" class="drag-handle" data-drag="${esc(list.id)}" aria-label="按住拖曳「${esc(list.title)}」調整順序" title="拖曳清單排序" ${state.busy ? "disabled" : ""}>☰</button></div>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
   const root = document.getElementById("detail-body");
   if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>替它取個名字，再加入想完成的事項。</p></div>`; return; }
   if (!detail || detail.list.id !== selected.id) { root.innerHTML = `<div class="blank"><h2>正在開啟清單…</h2></div>`; return; }
@@ -105,6 +106,71 @@ async function mutate(action, fields, success) {
 }
 async function changeItem(action, fields) { await mutate(action, { listId: state.selected, ...fields }); }
 
+async function persistListOrder(ids) {
+  const previous = state.lists;
+  const byId = new Map(previous.map(list => [list.id, list]));
+  state.lists = ids.map(id => byId.get(id));
+  state.busy = true;
+  state.error = "";
+  render();
+  try { await api("reorderLists", { listIds: ids }); await load(); }
+  catch (error) { state.lists = previous; state.error = error.message; }
+  finally { state.busy = false; render(); }
+}
+
+let dragging = null;
+app.addEventListener("pointerdown", event => {
+  const handle = event.target.closest("[data-drag]");
+  if (!handle || state.busy || (event.pointerType === "mouse" && event.button !== 0)) return;
+  event.preventDefault();
+  const entry = handle.closest(".list-entry");
+  dragging = { pointerId: event.pointerId, handle, entry, x: event.clientX, y: event.clientY, moved: false };
+  handle.setPointerCapture(event.pointerId);
+  entry.classList.add("dragging");
+});
+app.addEventListener("pointermove", event => {
+  if (!dragging || dragging.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  if (!dragging.moved && Math.hypot(event.clientX - dragging.x, event.clientY - dragging.y) < 8) return;
+  dragging.moved = true;
+  const nav = app.querySelector(".list-nav");
+  const bounds = nav.getBoundingClientRect();
+  const horizontal = getComputedStyle(nav).display === "flex";
+  if (horizontal) {
+    if (event.clientX > bounds.right - 28) nav.scrollLeft += 18;
+    if (event.clientX < bounds.left + 28) nav.scrollLeft -= 18;
+  }
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".list-entry");
+  if (!target || target === dragging.entry || target.parentElement !== nav) return;
+  const rect = target.getBoundingClientRect();
+  const before = horizontal ? event.clientX < rect.left + rect.width / 2 : event.clientY < rect.top + rect.height / 2;
+  nav.insertBefore(dragging.entry, before ? target : target.nextSibling);
+});
+function finishDrag(event) {
+  if (!dragging || dragging.pointerId !== event.pointerId) return;
+  const { entry, handle, moved } = dragging;
+  dragging = null;
+  if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+  entry.classList.remove("dragging");
+  if (event.type === "pointercancel") { render(); return; }
+  if (!moved) return;
+  const ids = [...app.querySelectorAll(".list-nav [data-list]")].map(button => button.dataset.list);
+  if (ids.some((id, index) => id !== state.lists[index]?.id)) void persistListOrder(ids);
+}
+app.addEventListener("pointerup", finishDrag);
+app.addEventListener("pointercancel", finishDrag);
+app.addEventListener("keydown", event => {
+  const handle = event.target.closest("[data-drag]");
+  if (!handle || state.busy || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+  event.preventDefault();
+  const index = state.lists.findIndex(list => list.id === handle.dataset.drag);
+  const target = index + (["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
+  if (target < 0 || target >= state.lists.length) return;
+  const ids = state.lists.map(list => list.id);
+  [ids[index], ids[target]] = [ids[target], ids[index]];
+  void persistListOrder(ids);
+});
+
 app.addEventListener("click", async event => {
   if (event.target.closest("#delete-list, .delete-list-trigger")) {
     const selected = state.lists.find(list => list.id === state.selected);
@@ -136,7 +202,7 @@ app.addEventListener("submit", async event => {
 
 render();
 if (state.session) void load();
-setInterval(() => { if (state.session && !document.hidden && document.activeElement?.tagName !== "INPUT" && !state.busy) void load(true); }, 4000);
+setInterval(() => { if (state.session && !document.hidden && document.activeElement?.tagName !== "INPUT" && !state.busy && !dragging) void load(true); }, 4000);
 
 </script>
 </body>
