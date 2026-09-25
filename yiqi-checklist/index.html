@@ -17,6 +17,7 @@
 .delete-list{flex:none;align-self:start;border:1px solid #f1cad0;background:#fff;color:#a63043;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700}.delete-list:hover{background:#fff2f4}.delete-list:disabled{opacity:.5;cursor:default}
 .sidebar-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.sidebar-heading h1{margin-bottom:20px}.sidebar-heading .delete-list{white-space:nowrap;margin-bottom:14px;padding:7px 9px}
 .sort-hint{font-size:12px;color:#7a89a0;margin:15px 0 -12px}.list-entry{display:flex;align-items:stretch;gap:5px;min-width:0}.list-entry .list-tab{flex:1;min-width:0;max-width:none}.drag-handle{flex:none;align-self:stretch;border:0;border-radius:12px;background:transparent;color:#8a9ab7;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:20px;width:36px;padding:0}.drag-handle:active{cursor:grabbing}.drag-handle:focus-visible{outline:2px solid #315be8}.list-entry.dragging{opacity:.62}.list-entry.dragging .drag-handle{color:#315be8}@media(max-width:720px){.list-entry{flex:none;width:228px}.list-entry .list-tab{max-width:none}.sort-hint{margin:14px 0 0}.drag-handle{background:#eef2ff;color:#315be8}}
+.item-sort-hint{float:right;color:#8290a3;font-size:12px;font-weight:500;margin-top:4px}.item-drag-handle{flex:none;border:0;border-radius:9px;background:#eef2ff;color:#315be8;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:18px;width:30px;height:34px;padding:0}.item-drag-handle:active{cursor:grabbing}.item-drag-handle:focus-visible{outline:2px solid #315be8}.item.dragging{background:#f1f5ff;opacity:.68}@media(max-width:720px){.item-drag-handle{width:30px;height:38px}}
 
   </style>
   <title>一起勾｜多人清單</title>
@@ -66,12 +67,12 @@ function renderWorkspace() {
   const root = document.getElementById("detail-body");
   if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>替它取個名字，再加入想完成的事項。</p></div>`; return; }
   if (!detail || detail.list.id !== selected.id) { root.innerHTML = `<div class="blank"><h2>正在開啟清單…</h2></div>`; return; }
-  root.innerHTML = `<div class="detail-top"><div><div class="eyebrow">共享清單</div><h2>${esc(selected.title)}</h2><p class="muted">${detail.members.length} 位成員 · ${done} / ${items.length} 項已完成</p></div><button type="button" id="delete-list" class="delete-list" ${state.busy ? "disabled" : ""}>刪除清單</button></div><div class="progress" role="progressbar" aria-label="完成進度" aria-valuenow="${done}" aria-valuemax="${items.length || 1}"><span style="width:${items.length ? done / items.length * 100 : 0}%"></span></div><div class="card"><h3 class="card-title">待完成 <small>${items.length - done}</small></h3><div id="todo-items"></div><form id="item-form" class="add-form"><span aria-hidden="true">＋</span><input class="input" name="title" aria-label="新增待辦項目" placeholder="新增一個項目…" maxlength="120" required><button class="button" ${state.busy ? "disabled" : ""}>新增</button></form></div>${done ? `<div class="card"><h3 class="card-title">已完成 <small>${done}</small></h3><div id="done-items"></div></div>` : ""}<div class="members">成員<div>${detail.members.map(member => `<span class="pill">${esc(member.name)}</span>`).join("")}</div></div>`;
+  root.innerHTML = `<div class="detail-top"><div><div class="eyebrow">共享清單</div><h2>${esc(selected.title)}</h2><p class="muted">${detail.members.length} 位成員 · ${done} / ${items.length} 項已完成</p></div><button type="button" id="delete-list" class="delete-list" ${state.busy ? "disabled" : ""}>刪除清單</button></div><div class="progress" role="progressbar" aria-label="完成進度" aria-valuenow="${done}" aria-valuemax="${items.length || 1}"><span style="width:${items.length ? done / items.length * 100 : 0}%"></span></div><div class="card"><h3 class="card-title">待完成 <small>${items.length - done}</small>${items.length > 1 ? `<span class="item-sort-hint">按住 ☰ 拖曳排序</span>` : ""}</h3><div id="todo-items"></div><form id="item-form" class="add-form"><span aria-hidden="true">＋</span><input class="input" name="title" aria-label="新增待辦項目" placeholder="新增一個項目…" maxlength="120" required><button class="button" ${state.busy ? "disabled" : ""}>新增</button></form></div>${done ? `<div class="card"><h3 class="card-title">已完成 <small>${done}</small></h3><div id="done-items"></div></div>` : ""}<div class="members">成員<div>${detail.members.map(member => `<span class="pill">${esc(member.name)}</span>`).join("")}</div></div>`;
   const todo = document.getElementById("todo-items");
   const doneRoot = document.getElementById("done-items");
   if (!items.some(item => !item.done)) todo.innerHTML = `<p class="empty-row">${items.length ? "全部完成了，做得好！" : "還沒有項目，從下面新增一件事。"}</p>`;
   for (const item of items) {
-    const row = document.createElement("div"); row.className = `item ${item.done ? "done" : ""}`;
+    const row = document.createElement("div"); row.className = `item ${item.done ? "done" : ""}`; row.dataset.item = item.id;
     const checkbox = document.createElement("input"); checkbox.type = "checkbox"; checkbox.checked = Boolean(item.done); checkbox.disabled = state.busy; checkbox.setAttribute("aria-label", `${item.done ? "取消完成" : "完成"} ${item.title}`);
     checkbox.addEventListener("change", () => void changeItem("setDone", { itemId: item.id, done: checkbox.checked }));
     const name = document.createElement("div"); name.className = "item-name"; name.textContent = item.title;
@@ -79,6 +80,7 @@ function renderWorkspace() {
     row.append(checkbox, name);
     if (!item.done) { const edit = document.createElement("button"); edit.className = "button plain"; edit.textContent = "編輯"; edit.setAttribute("aria-label", `編輯 ${item.title}`); edit.addEventListener("click", async () => { const next = prompt("修改項目", item.title); if (next && next.trim() && next !== item.title) await changeItem("renameItem", { itemId: item.id, title: next }); }); row.appendChild(edit); }
     const remove = document.createElement("button"); remove.className = "button plain"; remove.textContent = "刪除"; remove.setAttribute("aria-label", `刪除 ${item.title}`); remove.addEventListener("click", async () => { if (confirm(`刪除「${item.title}」？`)) await changeItem("deleteItem", { itemId: item.id }); }); row.appendChild(remove);
+    const handle = document.createElement("button"); handle.type = "button"; handle.className = "item-drag-handle"; handle.dataset.itemDrag = item.id; handle.textContent = "☰"; handle.disabled = state.busy; handle.setAttribute("aria-label", `按住拖曳「${item.title}」調整順序`); row.appendChild(handle);
     (item.done ? doneRoot : todo).appendChild(row);
   }
 }
@@ -118,13 +120,30 @@ async function persistListOrder(ids) {
   finally { state.busy = false; render(); }
 }
 
+async function persistItemOrder(ids) {
+  const detail = state.detail;
+  if (!detail) return;
+  const previous = detail.items;
+  const byId = new Map(previous.map(item => [item.id, item]));
+  detail.items = ids.map(id => byId.get(id));
+  state.busy = true;
+  state.error = "";
+  render();
+  try { await api("reorderItems", { listId: state.selected, itemIds: ids }); await load(); }
+  catch (error) { detail.items = previous; state.error = error.message; }
+  finally { state.busy = false; render(); }
+}
+
 let dragging = null;
 app.addEventListener("pointerdown", event => {
-  const handle = event.target.closest("[data-drag]");
-  if (!handle || state.busy || (event.pointerType === "mouse" && event.button !== 0)) return;
+  const handle = event.target.closest("[data-drag], [data-item-drag]");
+  if (!handle || dragging || state.busy || (event.pointerType === "mouse" && event.button !== 0)) return;
   event.preventDefault();
-  const entry = handle.closest(".list-entry");
-  dragging = { pointerId: event.pointerId, handle, entry, x: event.clientX, y: event.clientY, moved: false };
+  const kind = handle.hasAttribute("data-item-drag") ? "item" : "list";
+  const entry = handle.closest(kind === "item" ? ".item" : ".list-entry");
+  const container = entry.parentElement;
+  const originalOrder = kind === "item" ? [...container.querySelectorAll(".item[data-item]")].map(row => row.dataset.item) : null;
+  dragging = { pointerId: event.pointerId, handle, entry, container, kind, originalOrder, x: event.clientX, y: event.clientY, moved: false };
   handle.setPointerCapture(event.pointerId);
   entry.classList.add("dragging");
 });
@@ -133,36 +152,56 @@ app.addEventListener("pointermove", event => {
   event.preventDefault();
   if (!dragging.moved && Math.hypot(event.clientX - dragging.x, event.clientY - dragging.y) < 8) return;
   dragging.moved = true;
-  const nav = app.querySelector(".list-nav");
-  const bounds = nav.getBoundingClientRect();
-  const horizontal = getComputedStyle(nav).display === "flex";
+  const container = dragging.container;
+  const bounds = container.getBoundingClientRect();
+  const horizontal = dragging.kind === "list" && getComputedStyle(container).display === "flex";
   if (horizontal) {
-    if (event.clientX > bounds.right - 28) nav.scrollLeft += 18;
-    if (event.clientX < bounds.left + 28) nav.scrollLeft -= 18;
+    if (event.clientX > bounds.right - 28) container.scrollLeft += 18;
+    if (event.clientX < bounds.left + 28) container.scrollLeft -= 18;
   }
-  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".list-entry");
-  if (!target || target === dragging.entry || target.parentElement !== nav) return;
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(dragging.kind === "item" ? ".item[data-item]" : ".list-entry");
+  if (!target || target === dragging.entry || target.parentElement !== container) return;
   const rect = target.getBoundingClientRect();
   const before = horizontal ? event.clientX < rect.left + rect.width / 2 : event.clientY < rect.top + rect.height / 2;
-  nav.insertBefore(dragging.entry, before ? target : target.nextSibling);
+  container.insertBefore(dragging.entry, before ? target : target.nextSibling);
 });
 function finishDrag(event) {
   if (!dragging || dragging.pointerId !== event.pointerId) return;
-  const { entry, handle, moved } = dragging;
+  const { entry, handle, container, kind, originalOrder, moved } = dragging;
   dragging = null;
   if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
   entry.classList.remove("dragging");
   if (event.type === "pointercancel") { render(); return; }
   if (!moved) return;
+  if (kind === "item") {
+    const currentOrder = [...container.querySelectorAll(".item[data-item]")].map(row => row.dataset.item);
+    if (currentOrder.some((id, index) => id !== originalOrder[index])) {
+      const ids = [...app.querySelectorAll("#todo-items .item[data-item], #done-items .item[data-item]")].map(row => row.dataset.item);
+      void persistItemOrder(ids);
+    }
+    return;
+  }
   const ids = [...app.querySelectorAll(".list-nav [data-list]")].map(button => button.dataset.list);
   if (ids.some((id, index) => id !== state.lists[index]?.id)) void persistListOrder(ids);
 }
 app.addEventListener("pointerup", finishDrag);
 app.addEventListener("pointercancel", finishDrag);
 app.addEventListener("keydown", event => {
-  const handle = event.target.closest("[data-drag]");
+  const handle = event.target.closest("[data-drag], [data-item-drag]");
   if (!handle || state.busy || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
   event.preventDefault();
+  if (handle.hasAttribute("data-item-drag")) {
+    if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+    const container = handle.closest(".item").parentElement;
+    const rows = [...container.querySelectorAll(".item[data-item]")];
+    const index = rows.findIndex(row => row.dataset.item === handle.dataset.itemDrag);
+    const target = index + (event.key === "ArrowUp" ? -1 : 1);
+    if (target < 0 || target >= rows.length) return;
+    container.insertBefore(rows[index], target < index ? rows[target] : rows[target].nextSibling);
+    const ids = [...app.querySelectorAll("#todo-items .item[data-item], #done-items .item[data-item]")].map(row => row.dataset.item);
+    void persistItemOrder(ids);
+    return;
+  }
   const index = state.lists.findIndex(list => list.id === handle.dataset.drag);
   const target = index + (["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
   if (target < 0 || target >= state.lists.length) return;
