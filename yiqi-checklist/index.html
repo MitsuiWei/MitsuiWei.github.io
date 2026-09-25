@@ -47,7 +47,7 @@ function alert(message, good = false) {
 
 function renderAuth() {
   account.textContent = "";
-  app.innerHTML = `<div class="center"><section class="welcome"><div class="logo-mark">✓</div><h1>一起勾</h1><p>輸入你的專屬密碼，和朋友一起完成每一件事。</p>${alert(state.error)}<form id="password-form"><label for="password" class="eyebrow">密碼</label><input class="input" id="password" name="password" type="password" autocomplete="current-password" required><button class="button" ${state.busy ? "disabled" : ""}>${state.busy ? "登入中…" : "進入清單"}</button></form><p class="help">翔翔和 FIFI 各有一組密碼。</p></section></div>`;
+  app.innerHTML = `<div class="center"><section class="welcome"><div class="logo-mark">✓</div><h1>一起勾</h1><p>輸入你的專屬密碼，和朋友一起完成每一件事。</p>${alert(state.error)}<form id="password-form"><label for="password" class="eyebrow">密碼</label><input class="input" id="password" name="password" type="password" autocomplete="current-password" required><button class="button" ${state.busy ? "disabled" : ""}>${state.busy ? "登入中…" : "進入清單"}</button></form><p class="help">威翔和 FIFI 各有一組密碼。</p></section></div>`;
 }
 
 function renderWorkspace() {
