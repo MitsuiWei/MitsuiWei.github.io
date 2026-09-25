@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">一起勾：兩人共享的勾選清單</title>
+  <defs>
+    <linearGradient id="blue" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#5278F5"/>
+      <stop offset=".52" stop-color="#315BE8"/>
+      <stop offset="1" stop-color="#2445BE"/>
+    </linearGradient>
+    <linearGradient id="mint" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#9AFADE"/>
+      <stop offset="1" stop-color="#35D5BD"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#blue)"/>
+  <circle cx="70" cy="15" r="235" fill="#FFFFFF" opacity=".08"/>
+  <circle cx="489" cy="458" r="180" fill="#122BA6" opacity=".14"/>
+  <g>
+    <rect x="121" y="89" width="294" height="327" rx="59" fill="url(#mint)" transform="rotate(7 268 253)"/>
+    <rect x="94" y="125" width="309" height="306" rx="57" fill="#132B89" opacity=".22"/>
+    <rect x="94" y="113" width="309" height="306" rx="57" fill="#FFFFFF"/>
+  </g>
+  <rect x="133" y="158" width="72" height="72" rx="23" fill="#E8EFFF"/>
+  <path d="m151 192 15 15 26-31" fill="none" stroke="#315BE8" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="227" y="173" width="128" height="16" rx="8" fill="#B6C7EC"/>
+  <rect x="227" y="199" width="91" height="13" rx="6.5" fill="#DEE6F6"/>
+  <rect x="133" y="267" width="72" height="72" rx="23" fill="#DCF8F2"/>
+  <path d="m151 301 15 15 26-31" fill="none" stroke="#16BCA5" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="227" y="282" width="128" height="16" rx="8" fill="#B6C7EC"/>
+  <rect x="227" y="308" width="104" height="13" rx="6.5" fill="#DEE6F6"/>
+</svg>
