@@ -12,6 +12,7 @@
 .invite-panel{margin:0 0 22px;padding:17px;background:#edf2ff;border:1px solid #d8e3ff;border-radius:16px}.invite-panel .input{margin-top:7px;background:#fff;font-size:13px}.invite-actions{display:flex;gap:9px;margin-top:10px}.invite-actions .button{font-size:13px;padding:9px 14px}
 .account{display:flex;align-items:center;gap:12px}.account button{border:0;background:transparent;color:#315be8;font-size:13px;padding:7px 0}
 .delete-list{flex:none;align-self:start;border:1px solid #f1cad0;background:#fff;color:#a63043;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700}.delete-list:hover{background:#fff2f4}.delete-list:disabled{opacity:.5;cursor:default}
+.sidebar-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.sidebar-heading h1{margin-bottom:20px}.sidebar-heading .delete-list{white-space:nowrap;margin-bottom:14px;padding:7px 9px}
 
   </style>
   <title>一起勾｜多人清單</title>
@@ -57,7 +58,7 @@ function renderWorkspace() {
   const detail = state.detail;
   const items = detail?.items || [];
   const done = items.filter(item => item.done).length;
-  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><h1>所有清單</h1><form id="create-form" class="create-form"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></form><nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<button class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
+  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></form><nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<button class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
   const root = document.getElementById("detail-body");
   if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>替它取個名字，再加入想完成的事項。</p></div>`; return; }
   if (!detail || detail.list.id !== selected.id) { root.innerHTML = `<div class="blank"><h2>正在開啟清單…</h2></div>`; return; }
@@ -102,7 +103,7 @@ async function mutate(action, fields, success) {
 async function changeItem(action, fields) { await mutate(action, { listId: state.selected, ...fields }); }
 
 app.addEventListener("click", async event => {
-  if (event.target.closest("#delete-list")) {
+  if (event.target.closest("#delete-list, .delete-list-trigger")) {
     const selected = state.lists.find(list => list.id === state.selected);
     if (!selected || state.busy) return;
     if (!confirm(`確定刪除「${selected.title}」和裡面的所有項目嗎？兩人的清單都會移除，無法復原。`)) return;
