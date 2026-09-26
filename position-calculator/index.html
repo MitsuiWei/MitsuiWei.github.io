@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#132b47"><title>倉位計算機｜每一筆，先算好</title><meta name="description" content="輸入可用資金、進場價格與停損價格，即時計算現股可買股數、投入金額及停損虧損。"><link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./style.css"></head>
+<body><main>
+<header><div class="brand"><span class="mark" aria-hidden="true">÷</span><span>倉位計算機</span></div><span class="badge">現股・做多</span></header>
+<div class="intro"><p class="eyebrow">POSITION SIZING</p><h1>每一筆，先算好。</h1><p>設定進場與停損，掌握這筆交易的股數與風險。</p></div>
+<div class="workspace">
+<section class="inputs" aria-labelledby="input-title"><div class="section-heading"><h2 id="input-title">交易設定</h2><button id="reset" type="button">全部清空</button></div>
+<form id="form" novalidate>
+<label class="field" for="capital"><span>可用資金</span><div class="input-wrap"><span class="prefix">NT$</span><input id="capital" type="number" min="0" max="1000000000" step="any" inputmode="decimal"><span class="suffix">元</span></div></label>
+<div class="price-row"><label class="field" for="entry"><span>進場價格</span><div class="input-wrap"><input id="entry" type="number" min="0" max="1000000000" step="any" inputmode="decimal"><span class="suffix">元</span></div></label><label class="field" for="stop"><span>停損價格</span><div class="input-wrap"><input id="stop" type="number" min="0" max="1000000000" step="any" inputmode="decimal"><span class="suffix">元</span></div></label></div>
+<div class="field"><label for="unit">買入單位</label><select id="unit"><option value="1">零股・以 1 股計算</option><option value="1000">整張・以 1,000 股計算</option></select></div>
+<div class="risk-box"><label class="switch-row" for="risk-enabled"><span><strong>限制這筆交易的虧損</strong><small>用可承受的風險，反推可買股數</small></span><input type="checkbox" id="risk-enabled" role="switch"></label>
+<div id="risk-settings" hidden><div class="risk-controls"><label for="risk-type" class="sr-only">風險額度單位</label><select id="risk-type"><option value="money">最多虧損金額</option><option value="percent">占可用資金比例</option></select><label for="risk" class="sr-only">風險額度</label><div class="input-wrap"><input id="risk" type="number" min="0" max="1000000000" step="any" inputmode="decimal"><span class="suffix" id="risk-unit">元</span></div></div><p id="risk-help" class="hint"></p></div></div>
+<p id="error" role="alert" hidden></p>
+</form></section>
+<section class="results" aria-labelledby="result-title"><div class="result-top"><h2 id="result-title">可買股數</h2><span id="constraint">等待輸入</span></div><div aria-live="polite" aria-atomic="true"><div class="quantity"><span id="shares">—</span><span class="quantity-unit">股</span></div><p class="lots" id="lots">—</p><p class="zero-note" id="zero-note" hidden></p>
+<div class="allocation"><div class="allocation-label"><span>資金使用率</span><strong id="usage">—</strong></div><div class="bar"><span id="bar"></span></div></div>
+<dl class="metrics"><div><dt>投入金額</dt><dd id="cost">—</dd></div><div><dt>剩餘資金</dt><dd id="remaining">—</dd></div><div><dt>每股停損價差</dt><dd id="per-share">—</dd></div></dl>
+<div class="loss"><div><span>到價停損預估虧損</span><strong id="loss">—</strong></div><span class="risk-percent" id="loss-percent">—</span></div></div>
+<p class="result-note">以停損價成交計算，未含手續費、證交稅及滑價。買入前請另留交易費用。</p></section>
+</div>
+<footer><span>計算方式</span><p id="formula">可買股數 = 可用資金 ÷ 進場價，無條件捨去至買入單位。</p><p>適用現股做多，不含融資、期貨與放空。</p></footer>
+</main><script type="module" src="./app.js"></script></body></html>
