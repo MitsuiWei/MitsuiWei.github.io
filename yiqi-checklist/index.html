@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#315be8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="一起勾">
+  <meta name="description" content="和朋友一起完成共享清單">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icon-180.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;color:#17233c;background:#f5f7fb;font-size:16px}*{box-sizing:border-box}body{margin:0;min-height:100dvh}button,input{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.48}.topbar{background:#fff;border-bottom:1px solid #e7ebf2}.topbar-inner{max-width:1120px;margin:auto;height:72px;padding:0 28px;display:flex;align-items:center;justify-content:space-between}.logo{font-size:22px;font-weight:800;display:flex;align-items:center;gap:12px}.logo-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#315be8;color:white;font-size:25px}.account{color:#596b83;font-size:14px}.workspace{max-width:1120px;margin:auto;padding:38px 28px 80px;display:grid;grid-template-columns:290px minmax(0,1fr);gap:32px}.sidebar{border-right:1px solid #e4e9f2;padding-right:18px}.eyebrow{font-size:13px;font-weight:800;letter-spacing:.06em;color:#315be8;margin:0 0 8px}.sidebar h1{font-size:25px;margin:0 0 22px}.create-form{display:flex;gap:8px}.input{width:100%;border:1px solid #dae1ee;border-radius:11px;background:#fff;padding:11px 13px;outline:none;min-width:0}.input:focus{border-color:#315be8;box-shadow:0 0 0 3px #315be822}.button{border:0;border-radius:11px;background:#315be8;color:#fff;padding:11px 17px;font-weight:700;white-space:nowrap}.button.secondary{background:#fff;color:#315be8;border:1px solid #ccd8f5}.button.plain{padding:7px 9px;background:transparent;color:#75839a}.list-nav{display:grid;gap:8px;margin-top:24px}.list-tab{border:0;background:transparent;text-align:left;border-radius:14px;padding:13px;display:flex;align-items:center;gap:11px;color:#263650;min-width:0}.list-tab.active{background:#e8eeff;color:#214ad0}.list-tab:hover{background:#edf2fd}.list-icon{display:grid;place-items:center;width:36px;height:36px;flex:none;background:#fff;border-radius:10px;color:#315be8}.list-tab.active .list-icon{background:#315be8;color:#fff}.list-tab strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.list-tab small{display:block;color:#7b899e;font-size:12px;margin-top:3px}.detail{min-width:0}.detail-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.detail h2{margin:0;font-size:32px;overflow-wrap:anywhere}.muted{color:#75849a;font-size:14px;line-height:1.5}.detail-top .muted{margin:9px 0 0}.progress{height:7px;background:#e4eafa;border-radius:10px;overflow:hidden;margin:22px 0 28px}.progress>span{display:block;height:100%;background:#315be8;border-radius:10px}.card{border:1px solid #e5eaf2;border-radius:20px;background:#fff;padding:21px 23px 12px;margin-bottom:16px;box-shadow:0 10px 30px #23345908}.card-title{font-size:17px;font-weight:750;margin:0 0 13px}.card-title small{font-size:12px;background:#eef2fa;color:#667991;border-radius:20px;padding:2px 8px;margin-left:6px}.item{border-top:1px solid #f0f2f7;min-height:61px;display:flex;align-items:center;gap:13px}.item input[type=checkbox]{width:21px;height:21px;accent-color:#315be8;flex:none}.item-name{flex:1;min-width:0;overflow-wrap:anywhere}.item.done .item-name{text-decoration:line-through;color:#94a1b2}.item small{display:block;color:#8b98aa;font-size:12px;margin-top:3px}.add-form{display:flex;align-items:center;gap:9px;border-top:1px solid #f0f2f7;padding:15px 0 2px}.add-form .input{border:0;box-shadow:none;padding:9px}.empty-row{color:#8290a3;text-align:center;padding:20px 0 29px;font-size:14px}.members{margin:24px 0;color:#748198;font-size:13px}.members>div{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}.pill{border-radius:30px;background:#e9eef7;padding:7px 12px;color:#52647d}.center{min-height:calc(100dvh - 72px);display:grid;place-items:center;padding:26px}.welcome{width:min(100%,420px);border-radius:24px;background:#fff;border:1px solid #e5eaf2;box-shadow:0 18px 55px #1e325a10;padding:34px;text-align:center}.welcome .logo-mark{margin:0 auto 20px;width:56px;height:56px;font-size:30px}.welcome h1{font-size:27px;margin:0}.welcome p{color:#718097;line-height:1.6;margin:12px 0 25px}.welcome .input{margin-bottom:12px;text-align:left}.welcome .button{width:100%;margin-bottom:10px}.welcome .help{font-size:13px;color:#7d8ba0;margin:8px 0 0}.notice{margin:0 0 18px;background:#fff0f3;color:#9b2642;border-radius:12px;padding:12px 14px;font-size:14px}.notice.good{background:#e5f7ed;color:#216747}.blank{text-align:center;padding:90px 12px;color:#7a89a0}.blank h2{color:#24324b;font-size:23px;margin-bottom:6px}.invite-link{word-break:break-all;font-size:12px;color:#59718e;margin:8px 0}.link{color:#315be8;text-decoration:none;font-weight:700}.link:hover{text-decoration:underline}@media(max-width:720px){.topbar-inner{height:62px;padding:0 17px}.logo{font-size:20px}.workspace{display:block;padding:23px 16px 80px}.sidebar{border:0;padding:0}.sidebar h1{font-size:23px;margin-bottom:14px}.list-nav{display:flex;overflow-x:auto;gap:8px;margin:17px -16px 0;padding:0 16px 17px;scrollbar-width:none}.list-tab{flex:none;max-width:220px;border:1px solid #e6eaf3;background:#fff;padding:10px 12px}.list-tab.active{border-color:#ccd9ff}.list-icon{width:30px;height:30px}.detail{padding-top:8px}.detail h2{font-size:27px}.detail-top .button{font-size:13px;padding:9px 10px}.card{padding:17px 15px 10px;border-radius:18px}.item{gap:8px}.item .button.plain{padding:5px}.item-name{font-size:15px}.welcome{padding:30px 24px}.center{min-height:calc(100dvh - 62px)}}
+.invite-panel{margin:0 0 22px;padding:17px;background:#edf2ff;border:1px solid #d8e3ff;border-radius:16px}.invite-panel .input{margin-top:7px;background:#fff;font-size:13px}.invite-actions{display:flex;gap:9px;margin-top:10px}.invite-actions .button{font-size:13px;padding:9px 14px}
+.account{display:flex;align-items:center;gap:12px}.account button{border:0;background:transparent;color:#315be8;font-size:13px;padding:7px 0}
+.delete-list{flex:none;align-self:start;border:1px solid #f1cad0;background:#fff;color:#a63043;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700}.delete-list:hover{background:#fff2f4}.delete-list:disabled{opacity:.5;cursor:default}
+.sidebar-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.sidebar-heading h1{margin-bottom:20px}.sidebar-heading .delete-list{white-space:nowrap;margin-bottom:14px;padding:7px 9px}
+.sort-hint{font-size:12px;color:#7a89a0;margin:15px 0 -12px}.list-entry{display:flex;align-items:stretch;gap:5px;min-width:0}.list-entry .list-tab{flex:1;min-width:0;max-width:none}.drag-handle{flex:none;align-self:stretch;border:0;border-radius:12px;background:transparent;color:#8a9ab7;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:20px;width:36px;padding:0}.drag-handle:active{cursor:grabbing}.drag-handle:focus-visible{outline:2px solid #315be8}.list-entry.dragging{opacity:.62}.list-entry.dragging .drag-handle{color:#315be8}@media(max-width:720px){.list-entry{flex:none;width:228px}.list-entry .list-tab{max-width:none}.sort-hint{margin:14px 0 0}.drag-handle{background:#eef2ff;color:#315be8}}
+.item-sort-hint{float:right;color:#8290a3;font-size:12px;font-weight:500;margin-top:4px}.item-drag-handle{flex:none;border:0;border-radius:9px;background:#eef2ff;color:#315be8;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:18px;width:30px;height:34px;padding:0}.item-drag-handle:active{cursor:grabbing}.item-drag-handle:focus-visible{outline:2px solid #315be8}.item.dragging{background:#f1f5ff;opacity:.68}@media(max-width:720px){.item-drag-handle{width:30px;height:38px}}
+
+  </style>
+  <title>一起勾｜多人清單</title>
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner"><div class="logo"><span class="logo-mark">✓</span>一起勾</div><span id="account" class="account"></span></div></header>
+  <main id="app"></main>
+<script>
+const BACKEND = location.hostname === "terminal.local" ? location.origin : "https://xiang-checklist.robust-charm-9806.chatgpt.site";
+const API = `${BACKEND}/api/external`;
+const app = document.getElementById("app");
+const account = document.getElementById("account");
+const STORAGE_KEY = "yiqi_password_session";
+const state = { session: localStorage.getItem(STORAGE_KEY) || "", name: "", selected: "", lists: [], detail: null, error: "", message: "", busy: false };
+const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+
+async function api(action, fields = {}, authenticated = true) {
+  const response = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(authenticated && state.session ? { Authorization: `Bearer ${state.session}` } : {}) },
+    body: JSON.stringify({ action, ...fields }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    if (response.status === 401 && authenticated) { state.session = ""; localStorage.removeItem(STORAGE_KEY); }
+    throw new Error(data.error || "連線失敗，請稍後重試");
+  }
+  return data;
+}
+
+function alert(message, good = false) {
+  return message ? `<div class="notice ${good ? "good" : ""}" role="${good ? "status" : "alert"}">${esc(message)}</div>` : "";
+}
+
+function renderAuth() {
+  account.textContent = "";
+  app.innerHTML = `<div class="center"><section class="welcome"><div class="logo-mark">✓</div><h1>一起勾</h1><p>輸入你的專屬密碼，和朋友一起完成每一件事。</p>${alert(state.error)}<form id="password-form"><label for="password" class="eyebrow">密碼</label><input class="input" id="password" name="password" type="password" autocomplete="current-password" required><button class="button" ${state.busy ? "disabled" : ""}>${state.busy ? "登入中…" : "進入清單"}</button></form><p class="help">威翔和 FIFI 各有一組密碼。</p></section></div>`;
+}
+
+function renderWorkspace() {
+  account.innerHTML = `<span>${esc(state.name)}</span><button type="button" id="logout-button" aria-label="切換使用者">切換使用者</button>`;
+  const selected = state.lists.find(list => list.id === state.selected);
+  const detail = state.detail;
+  const items = detail?.items || [];
+  const done = items.filter(item => item.done).length;
+  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></form>${state.lists.length > 1 ? `<p class="sort-hint">按住清單右側的 ☰ 可拖曳排序</p>` : ""}<nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<div class="list-entry"><button type="button" class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button><button type="button" class="drag-handle" data-drag="${esc(list.id)}" aria-label="按住拖曳「${esc(list.title)}」調整順序" title="拖曳清單排序" ${state.busy ? "disabled" : ""}>☰</button></div>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
+  const root = document.getElementById("detail-body");
+  if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>替它取個名字，再加入想完成的事項。</p></div>`; return; }
+  if (!detail || detail.list.id !== selected.id) { root.innerHTML = `<div class="blank"><h2>正在開啟清單…</h2></div>`; return; }
+  root.innerHTML = `<div class="detail-top"><div><div class="eyebrow">共享清單</div><h2>${esc(selected.title)}</h2><p class="muted">${detail.members.length} 位成員 · ${done} / ${items.length} 項已完成</p></div><button type="button" id="delete-list" class="delete-list" ${state.busy ? "disabled" : ""}>刪除清單</button></div><div class="progress" role="progressbar" aria-label="完成進度" aria-valuenow="${done}" aria-valuemax="${items.length || 1}"><span style="width:${items.length ? done / items.length * 100 : 0}%"></span></div><div class="card"><h3 class="card-title">待完成 <small>${items.length - done}</small>${items.length > 1 ? `<span class="item-sort-hint">按住 ☰ 拖曳排序</span>` : ""}</h3><div id="todo-items"></div><form id="item-form" class="add-form"><span aria-hidden="true">＋</span><input class="input" name="title" aria-label="新增待辦項目" placeholder="新增一個項目…" maxlength="120" required><button class="button" ${state.busy ? "disabled" : ""}>新增</button></form></div>${done ? `<div class="card"><h3 class="card-title">已完成 <small>${done}</small></h3><div id="done-items"></div></div>` : ""}<div class="members">成員<div>${detail.members.map(member => `<span class="pill">${esc(member.name)}</span>`).join("")}</div></div>`;
+  const todo = document.getElementById("todo-items");
+  const doneRoot = document.getElementById("done-items");
+  if (!items.some(item => !item.done)) todo.innerHTML = `<p class="empty-row">${items.length ? "全部完成了，做得好！" : "還沒有項目，從下面新增一件事。"}</p>`;
+  for (const item of items) {
+    const row = document.createElement("div"); row.className = `item ${item.done ? "done" : ""}`; row.dataset.item = item.id;
+    const checkbox = document.createElement("input"); checkbox.type = "checkbox"; checkbox.checked = Boolean(item.done); checkbox.disabled = state.busy; checkbox.setAttribute("aria-label", `${item.done ? "取消完成" : "完成"} ${item.title}`);
+    checkbox.addEventListener("change", () => void changeItem("setDone", { itemId: item.id, done: checkbox.checked }));
+    const name = document.createElement("div"); name.className = "item-name"; name.textContent = item.title;
+    if (item.done && item.completedByName) { const by = document.createElement("small"); by.textContent = `${item.completedByName} 完成`; name.appendChild(by); }
+    row.append(checkbox, name);
+    if (!item.done) { const edit = document.createElement("button"); edit.className = "button plain"; edit.textContent = "編輯"; edit.setAttribute("aria-label", `編輯 ${item.title}`); edit.addEventListener("click", async () => { const next = prompt("修改項目", item.title); if (next && next.trim() && next !== item.title) await changeItem("renameItem", { itemId: item.id, title: next }); }); row.appendChild(edit); }
+    const remove = document.createElement("button"); remove.className = "button plain"; remove.textContent = "刪除"; remove.setAttribute("aria-label", `刪除 ${item.title}`); remove.addEventListener("click", async () => { if (confirm(`刪除「${item.title}」？`)) await changeItem("deleteItem", { itemId: item.id }); }); row.appendChild(remove);
+    const handle = document.createElement("button"); handle.type = "button"; handle.className = "item-drag-handle"; handle.dataset.itemDrag = item.id; handle.textContent = "☰"; handle.disabled = state.busy; handle.setAttribute("aria-label", `按住拖曳「${item.title}」調整順序`); row.appendChild(handle);
+    (item.done ? doneRoot : todo).appendChild(row);
+  }
+}
+
+function render() { !state.session ? renderAuth() : renderWorkspace(); }
+
+async function load(quiet = false) {
+  if (!state.session) { render(); return; }
+  try {
+    const [who, lists] = await Promise.all([api("whoami"), api("lists")]);
+    state.name = who.name; state.lists = lists.lists;
+    if (!state.lists.some(list => list.id === state.selected)) state.selected = state.lists[0]?.id || "";
+    state.detail = state.selected ? await api("detail", { listId: state.selected }) : null;
+    if (!quiet) state.error = "";
+  } catch (error) { if (!quiet) state.error = error.message; }
+  render();
+}
+
+async function mutate(action, fields, success) {
+  if (state.busy) return;
+  state.busy = true; state.error = ""; state.message = "";
+  try { const result = await api(action, fields); if (success) await success(result); await load(); }
+  catch (error) { state.error = error.message; render(); }
+  finally { state.busy = false; render(); }
+}
+async function changeItem(action, fields) { await mutate(action, { listId: state.selected, ...fields }); }
+
+async function persistListOrder(ids) {
+  const previous = state.lists;
+  const byId = new Map(previous.map(list => [list.id, list]));
+  state.lists = ids.map(id => byId.get(id));
+  state.busy = true;
+  state.error = "";
+  render();
+  try { await api("reorderLists", { listIds: ids }); await load(); }
+  catch (error) { state.lists = previous; state.error = error.message; }
+  finally { state.busy = false; render(); }
+}
+
+async function persistItemOrder(ids) {
+  const detail = state.detail;
+  if (!detail) return;
+  const previous = detail.items;
+  const byId = new Map(previous.map(item => [item.id, item]));
+  detail.items = ids.map(id => byId.get(id));
+  state.busy = true;
+  state.error = "";
+  render();
+  try { await api("reorderItems", { listId: state.selected, itemIds: ids }); await load(); }
+  catch (error) { detail.items = previous; state.error = error.message; }
+  finally { state.busy = false; render(); }
+}
+
+let dragging = null;
+app.addEventListener("pointerdown", event => {
+  const handle = event.target.closest("[data-drag], [data-item-drag]");
+  if (!handle || dragging || state.busy || (event.pointerType === "mouse" && event.button !== 0)) return;
+  event.preventDefault();
+  const kind = handle.hasAttribute("data-item-drag") ? "item" : "list";
+  const entry = handle.closest(kind === "item" ? ".item" : ".list-entry");
+  const container = entry.parentElement;
+  const originalOrder = kind === "item" ? [...container.querySelectorAll(".item[data-item]")].map(row => row.dataset.item) : null;
+  dragging = { pointerId: event.pointerId, handle, entry, container, kind, originalOrder, x: event.clientX, y: event.clientY, moved: false };
+  handle.setPointerCapture(event.pointerId);
+  entry.classList.add("dragging");
+});
+app.addEventListener("pointermove", event => {
+  if (!dragging || dragging.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  if (!dragging.moved && Math.hypot(event.clientX - dragging.x, event.clientY - dragging.y) < 8) return;
+  dragging.moved = true;
+  const container = dragging.container;
+  const bounds = container.getBoundingClientRect();
+  const horizontal = dragging.kind === "list" && getComputedStyle(container).display === "flex";
+  if (horizontal) {
+    if (event.clientX > bounds.right - 28) container.scrollLeft += 18;
+    if (event.clientX < bounds.left + 28) container.scrollLeft -= 18;
+  }
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(dragging.kind === "item" ? ".item[data-item]" : ".list-entry");
+  if (!target || target === dragging.entry || target.parentElement !== container) return;
+  const rect = target.getBoundingClientRect();
+  const before = horizontal ? event.clientX < rect.left + rect.width / 2 : event.clientY < rect.top + rect.height / 2;
+  container.insertBefore(dragging.entry, before ? target : target.nextSibling);
+});
+function finishDrag(event) {
+  if (!dragging || dragging.pointerId !== event.pointerId) return;
+  const { entry, handle, container, kind, originalOrder, moved } = dragging;
+  dragging = null;
+  if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId);
+  entry.classList.remove("dragging");
+  if (event.type === "pointercancel") { render(); return; }
+  if (!moved) return;
+  if (kind === "item") {
+    const currentOrder = [...container.querySelectorAll(".item[data-item]")].map(row => row.dataset.item);
+    if (currentOrder.some((id, index) => id !== originalOrder[index])) {
+      const ids = [...app.querySelectorAll("#todo-items .item[data-item], #done-items .item[data-item]")].map(row => row.dataset.item);
+      void persistItemOrder(ids);
+    }
+    return;
+  }
+  const ids = [...app.querySelectorAll(".list-nav [data-list]")].map(button => button.dataset.list);
+  if (ids.some((id, index) => id !== state.lists[index]?.id)) void persistListOrder(ids);
+}
+app.addEventListener("pointerup", finishDrag);
+app.addEventListener("pointercancel", finishDrag);
+app.addEventListener("keydown", event => {
+  const handle = event.target.closest("[data-drag], [data-item-drag]");
+  if (!handle || state.busy || !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) return;
+  event.preventDefault();
+  if (handle.hasAttribute("data-item-drag")) {
+    if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+    const container = handle.closest(".item").parentElement;
+    const rows = [...container.querySelectorAll(".item[data-item]")];
+    const index = rows.findIndex(row => row.dataset.item === handle.dataset.itemDrag);
+    const target = index + (event.key === "ArrowUp" ? -1 : 1);
+    if (target < 0 || target >= rows.length) return;
+    container.insertBefore(rows[index], target < index ? rows[target] : rows[target].nextSibling);
+    const ids = [...app.querySelectorAll("#todo-items .item[data-item], #done-items .item[data-item]")].map(row => row.dataset.item);
+    void persistItemOrder(ids);
+    return;
+  }
+  const index = state.lists.findIndex(list => list.id === handle.dataset.drag);
+  const target = index + (["ArrowLeft", "ArrowUp"].includes(event.key) ? -1 : 1);
+  if (target < 0 || target >= state.lists.length) return;
+  const ids = state.lists.map(list => list.id);
+  [ids[index], ids[target]] = [ids[target], ids[index]];
+  void persistListOrder(ids);
+});
+
+app.addEventListener("click", async event => {
+  if (event.target.closest("#delete-list, .delete-list-trigger")) {
+    const selected = state.lists.find(list => list.id === state.selected);
+    if (!selected || state.busy) return;
+    if (!confirm(`確定刪除「${selected.title}」和裡面的所有項目嗎？兩人的清單都會移除，無法復原。`)) return;
+    await mutate("deleteList", { listId: selected.id }, () => { state.selected = ""; state.detail = null; });
+    return;
+  }
+  const list = event.target.closest("[data-list]");
+  if (list) { state.selected = list.dataset.list; state.detail = null; render(); await load(); }
+});
+account.addEventListener("click", event => {
+  if (event.target.id !== "logout-button") return;
+  localStorage.removeItem(STORAGE_KEY); state.session = ""; state.name = ""; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; render();
+});
+
+app.addEventListener("submit", async event => {
+  event.preventDefault();
+  const form = event.target;
+  if (form.id === "password-form") {
+    const password = form.elements.password.value; state.busy = true; state.error = ""; render();
+    try { const data = await api("passwordLogin", { password }, false); state.session = data.session; localStorage.setItem(STORAGE_KEY, data.session); await load(); }
+    catch (error) { state.error = error.message; }
+    state.busy = false; render(); return;
+  }
+  if (form.id === "create-form") { const title = form.elements.title.value.trim(); if (title) await mutate("createList", { title }, result => { state.selected = result.id; state.detail = null; }); }
+  if (form.id === "item-form") { const title = form.elements.title.value.trim(); if (title) await changeItem("addItem", { title }); }
+});
+
+render();
+if (state.session) void load();
+setInterval(() => { if (state.session && !document.hidden && document.activeElement?.tagName !== "INPUT" && !state.busy && !dragging) void load(true); }, 4000);
+
+</script>
+</body>
+</html>
