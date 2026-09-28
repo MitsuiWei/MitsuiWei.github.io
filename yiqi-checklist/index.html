@@ -60,7 +60,15 @@ const API = `${BACKEND}/api/external`;
 const app = document.getElementById("app");
 const account = document.getElementById("account");
 const STORAGE_KEY = "yiqi_password_session";
+const CACHE_KEY = "yiqi_snapshot_v1";
 const state = { session: localStorage.getItem(STORAGE_KEY) || "", name: "", canCreatePrivate: false, selected: "", lists: [], detail: null, error: "", message: "", busy: false, drawerOpen: false };
+try {
+  const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || "null");
+  if (state.session && cached?.session === state.session && Array.isArray(cached.lists)) {
+    state.name = cached.name || ""; state.canCreatePrivate = Boolean(cached.canCreatePrivate);
+    state.selected = cached.selected || ""; state.lists = cached.lists; state.detail = cached.detail || null;
+  }
+} catch { /* The page can still load directly from the server. */ }
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
 async function api(action, fields = {}, authenticated = true) {
@@ -71,7 +79,7 @@ async function api(action, fields = {}, authenticated = true) {
   });
   const data = await response.json();
   if (!response.ok) {
-    if (response.status === 401 && authenticated) { state.session = ""; localStorage.removeItem(STORAGE_KEY); }
+    if (response.status === 401 && authenticated) { state.session = ""; localStorage.removeItem(STORAGE_KEY); sessionStorage.removeItem(CACHE_KEY); }
     throw new Error(data.error || "連線失敗，請稍後重試");
   }
   return data;
@@ -108,9 +116,10 @@ function renderWorkspace() {
     checkbox.addEventListener("change", () => void changeItem("setDone", { itemId: item.id, done: checkbox.checked }));
     const name = document.createElement("div"); name.className = "item-name"; name.textContent = item.title;
     if (item.done && item.completedByName) { const by = document.createElement("small"); by.textContent = `${item.completedByName} 完成`; name.appendChild(by); }
+    if (item.id.startsWith("pending:")) { const pending = document.createElement("small"); pending.textContent = "正在同步…"; name.appendChild(pending); }
     row.append(checkbox, name);
-    if (!item.done) { const edit = document.createElement("button"); edit.className = "button plain"; edit.textContent = "編輯"; edit.setAttribute("aria-label", `編輯 ${item.title}`); edit.addEventListener("click", async () => { const next = prompt("修改項目", item.title); if (next && next.trim() && next !== item.title) await changeItem("renameItem", { itemId: item.id, title: next }); }); row.appendChild(edit); }
-    const remove = document.createElement("button"); remove.className = "button plain"; remove.textContent = "刪除"; remove.setAttribute("aria-label", `刪除 ${item.title}`); remove.addEventListener("click", async () => { if (confirm(`刪除「${item.title}」？`)) await changeItem("deleteItem", { itemId: item.id }); }); row.appendChild(remove);
+    if (!item.done) { const edit = document.createElement("button"); edit.className = "button plain"; edit.textContent = "編輯"; edit.disabled = state.busy; edit.setAttribute("aria-label", `編輯 ${item.title}`); edit.addEventListener("click", async () => { const next = prompt("修改項目", item.title); if (next && next.trim() && next !== item.title) await changeItem("renameItem", { itemId: item.id, title: next }); }); row.appendChild(edit); }
+    const remove = document.createElement("button"); remove.className = "button plain"; remove.textContent = "刪除"; remove.disabled = state.busy; remove.setAttribute("aria-label", `刪除 ${item.title}`); remove.addEventListener("click", async () => { if (confirm(`刪除「${item.title}」？`)) await changeItem("deleteItem", { itemId: item.id }); }); row.appendChild(remove);
     const handle = document.createElement("button"); handle.type = "button"; handle.className = "item-drag-handle"; handle.dataset.itemDrag = item.id; handle.textContent = "☰"; handle.disabled = state.busy; handle.setAttribute("aria-label", `按住拖曳「${item.title}」調整順序`); row.appendChild(handle);
     (item.done ? doneRoot : todo).appendChild(row);
   }
@@ -118,26 +127,51 @@ function renderWorkspace() {
 
 function render() { !state.session ? renderAuth() : renderWorkspace(); }
 
+let loadVersion = 0;
 async function load(quiet = false) {
   if (!state.session) { render(); return; }
+  const version = ++loadVersion;
   try {
-    const [who, lists] = await Promise.all([api("whoami"), api("lists")]);
-    state.name = who.name; state.canCreatePrivate = Boolean(who.canCreatePrivate); state.lists = lists.lists;
-    if (!state.lists.some(list => list.id === state.selected)) state.selected = state.lists[0]?.id || "";
-    state.detail = state.selected ? await api("detail", { listId: state.selected }) : null;
+    const snapshot = await api("snapshot", { listId: state.selected });
+    if (version !== loadVersion) return;
+    state.name = snapshot.name; state.canCreatePrivate = Boolean(snapshot.canCreatePrivate);
+    state.lists = snapshot.lists; state.selected = snapshot.selected; state.detail = snapshot.detail;
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ session: state.session, name: state.name, canCreatePrivate: state.canCreatePrivate, lists: state.lists, selected: state.selected, detail: state.detail })); } catch { /* The online list still works when browser storage is full. */ }
     if (!quiet) state.error = "";
-  } catch (error) { if (!quiet) state.error = error.message; }
+  } catch (error) { if (version !== loadVersion) return; if (!quiet) state.error = error.message; }
   render();
 }
 
 async function mutate(action, fields, success) {
   if (state.busy) return;
+  loadVersion++;
   state.busy = true; state.error = ""; state.message = "";
   try { const result = await api(action, fields); if (success) await success(result); await load(); }
   catch (error) { state.error = error.message; render(); }
   finally { state.busy = false; render(); }
 }
 async function changeItem(action, fields) { await mutate(action, { listId: state.selected, ...fields }); }
+
+async function addItem(title) {
+  if (state.busy || !state.detail || !state.selected) return;
+  const listId = state.selected;
+  const previousDetail = state.detail;
+  const previousLists = state.lists;
+  loadVersion++;
+  state.busy = true; state.error = "";
+  state.detail = { ...previousDetail, items: [...previousDetail.items, { id: `pending:${Date.now()}`, title, done: false }] };
+  state.lists = previousLists.map(list => list.id === listId ? { ...list, total: Number(list.total) + 1 } : list);
+  render();
+  let saved = false;
+  try {
+    const created = await api("addItem", { listId, title });
+    saved = true;
+    if (state.detail?.list.id === listId) state.detail.items = state.detail.items.map(item => item.id.startsWith("pending:") ? { ...item, id: created.id } : item);
+    await load();
+  }
+  catch (error) { if (!saved) { state.detail = previousDetail; state.lists = previousLists; } state.error = error.message; }
+  finally { state.busy = false; render(); }
+}
 
 async function persistListOrder(ids) {
   const previous = state.lists;
@@ -259,7 +293,7 @@ document.addEventListener("keydown", event => {
 });
 account.addEventListener("click", event => {
   if (event.target.id !== "logout-button") return;
-  localStorage.removeItem(STORAGE_KEY); state.session = ""; state.name = ""; state.canCreatePrivate = false; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; state.drawerOpen = false; render();
+  localStorage.removeItem(STORAGE_KEY); sessionStorage.removeItem(CACHE_KEY); loadVersion++; state.session = ""; state.name = ""; state.canCreatePrivate = false; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; state.drawerOpen = false; render();
 });
 
 app.addEventListener("submit", async event => {
@@ -272,12 +306,17 @@ app.addEventListener("submit", async event => {
     state.busy = false; render(); return;
   }
   if (form.id === "create-form") { const title = form.elements.title.value.trim(); const visibility = form.elements.visibility?.value || "shared"; if (title) await mutate("createList", { title, visibility }, result => { state.selected = result.id; state.detail = null; state.drawerOpen = false; }); }
-  if (form.id === "item-form") { const title = form.elements.title.value.trim(); if (title) await changeItem("addItem", { title }); }
+  if (form.id === "item-form") { const title = form.elements.title.value.trim(); if (title) await addItem(title); }
 });
 
 render();
 if (state.session) void load();
-setInterval(() => { if (state.session && !document.hidden && !state.drawerOpen && document.activeElement?.tagName !== "INPUT" && !state.busy && !dragging) void load(true); }, 4000);
+let pollInFlight = false;
+setInterval(() => {
+  if (!state.session || document.hidden || state.drawerOpen || document.activeElement?.tagName === "INPUT" || state.busy || dragging || pollInFlight) return;
+  pollInFlight = true;
+  void load(true).finally(() => { pollInFlight = false; });
+}, 4000);
 
 </script>
 </body>
