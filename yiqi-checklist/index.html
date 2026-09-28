@@ -19,8 +19,36 @@
 .sort-hint{font-size:12px;color:#7a89a0;margin:15px 0 -12px}.list-entry{display:flex;align-items:stretch;gap:5px;min-width:0}.list-entry .list-tab{flex:1;min-width:0;max-width:none}.drag-handle{flex:none;align-self:stretch;border:0;border-radius:12px;background:transparent;color:#8a9ab7;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:20px;width:36px;padding:0}.drag-handle:active{cursor:grabbing}.drag-handle:focus-visible{outline:2px solid #315be8}.list-entry.dragging{opacity:.62}.list-entry.dragging .drag-handle{color:#315be8}@media(max-width:720px){.list-entry{flex:none;width:228px}.list-entry .list-tab{max-width:none}.sort-hint{margin:14px 0 0}.drag-handle{background:#eef2ff;color:#315be8}}
 .item-sort-hint{float:right;color:#8290a3;font-size:12px;font-weight:500;margin-top:4px}.item-drag-handle{flex:none;border:0;border-radius:9px;background:#eef2ff;color:#315be8;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:18px;width:30px;height:34px;padding:0}.item-drag-handle:active{cursor:grabbing}.item-drag-handle:focus-visible{outline:2px solid #315be8}.item.dragging{background:#f1f5ff;opacity:.68}@media(max-width:720px){.item-drag-handle{width:30px;height:38px}}
 .create-form{display:block}.create-form-row{display:flex;gap:8px}.scope-choices{border:0;margin:13px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}.scope-choices legend{color:#667991;font-size:12px;font-weight:700;margin-bottom:6px}.scope-choices label{border:1px solid #dce4f3;border-radius:10px;background:#fff;color:#405574;display:flex;align-items:center;gap:4px;padding:8px 9px;font-size:12px;cursor:pointer;white-space:nowrap}.scope-choices label:has(input:checked){border-color:#9eb7ff;background:#edf2ff;color:#254ccb}.scope-choices input{accent-color:#315be8;margin:0}
+.sidebar-scrim,.sidebar-toggle,.sidebar-close{display:none}
+.sidebar-top .eyebrow{margin-bottom:8px}
+@media(max-width:720px){
+  body.drawer-open{overflow:hidden}
+  .workspace{display:block;padding:20px 16px 80px}
+  .sidebar-scrim{display:block;position:fixed;inset:0;width:100%;height:100%;border:0;background:#13234491;z-index:20;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility .22s}
+  .sidebar{position:fixed;z-index:21;top:0;bottom:0;left:0;width:min(86vw,360px);max-height:100dvh;overflow-y:auto;overscroll-behavior:contain;background:#f8faff;border:0;border-radius:0 22px 22px 0;box-shadow:18px 0 48px #16244224;padding:calc(23px + env(safe-area-inset-top)) 17px calc(24px + env(safe-area-inset-bottom));transform:translateX(-105%);visibility:hidden;transition:transform .22s ease,visibility .22s}
+  body.drawer-open .sidebar-scrim{opacity:1;visibility:visible;pointer-events:auto}
+  body.drawer-open .sidebar{transform:translateX(0);visibility:visible}
+  .sidebar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+  .sidebar-top .eyebrow{margin:0}
+  .sidebar-close{display:grid;place-items:center;width:37px;height:37px;border:0;border-radius:11px;background:#e9eef9;color:#3e5378;font-size:26px;line-height:1}
+  .sidebar-heading{align-items:center}
+  .sidebar-heading h1{font-size:24px;margin:0 0 19px}
+  .sidebar-heading .delete-list{font-size:11px;padding:7px;margin-bottom:17px}
+  .list-nav{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:18px 0 0;padding:0;overflow:visible}
+  .list-entry{width:100%;min-width:0;flex:none;gap:5px}
+  .list-entry .list-tab{width:100%;max-width:none;min-width:0;padding:11px 12px;border:1px solid #e1e8f6;border-radius:14px;background:#fff}
+  .list-entry .list-tab.active{border-color:#b7cbff;background:#e9efff}
+  .list-entry .drag-handle{width:36px;border-radius:12px}
+  .sort-hint{margin:17px 0 0}
+  .sidebar-toggle{display:inline-flex;align-items:center;gap:9px;min-height:43px;padding:8px 12px;margin-bottom:21px;border:1px solid #d6e1fa;border-radius:13px;background:#fff;color:#315be8;font-weight:750;box-shadow:0 4px 14px #2334590a}
+  .sidebar-toggle>span:first-child{font-size:18px;line-height:1}
+  .sidebar-count{display:grid;place-items:center;min-width:22px;height:22px;padding:0 5px;border-radius:20px;background:#e8eeff;color:#315be8;font-size:12px}
+  .detail{padding-top:0}
+  .blank{padding:60px 12px}
+}
+@media(prefers-reduced-motion:reduce){.sidebar,.sidebar-scrim{transition:none}}
 
-  </style>
+</style>
   <title>一起勾｜多人清單</title>
 </head>
 <body>
@@ -32,7 +60,7 @@ const API = `${BACKEND}/api/external`;
 const app = document.getElementById("app");
 const account = document.getElementById("account");
 const STORAGE_KEY = "yiqi_password_session";
-const state = { session: localStorage.getItem(STORAGE_KEY) || "", name: "", canCreatePrivate: false, selected: "", lists: [], detail: null, error: "", message: "", busy: false };
+const state = { session: localStorage.getItem(STORAGE_KEY) || "", name: "", canCreatePrivate: false, selected: "", lists: [], detail: null, error: "", message: "", busy: false, drawerOpen: false };
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
 async function api(action, fields = {}, authenticated = true) {
@@ -54,19 +82,21 @@ function alert(message, good = false) {
 }
 
 function renderAuth() {
+  document.body.classList.remove("drawer-open");
   account.textContent = "";
   app.innerHTML = `<div class="center"><section class="welcome"><div class="logo-mark">✓</div><h1>一起勾</h1><p>輸入你的專屬密碼，和朋友一起完成每一件事。</p>${alert(state.error)}<form id="password-form"><label for="password" class="eyebrow">密碼</label><input class="input" id="password" name="password" type="password" autocomplete="current-password" required><button class="button" ${state.busy ? "disabled" : ""}>${state.busy ? "登入中…" : "進入清單"}</button></form><p class="help">威翔和 FIFI 各有一組密碼。</p></section></div>`;
 }
 
 function renderWorkspace() {
+  document.body.classList.toggle("drawer-open", state.drawerOpen);
   account.innerHTML = `<span>${esc(state.name)}</span><button type="button" id="logout-button" aria-label="切換使用者">切換使用者</button>`;
   const selected = state.lists.find(list => list.id === state.selected);
   const detail = state.detail;
   const items = detail?.items || [];
   const done = items.filter(item => item.done).length;
-  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><div class="create-form-row"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></div>${state.canCreatePrivate ? `<fieldset class="scope-choices"><legend>誰可以看到？</legend><label><input type="radio" name="visibility" value="shared" checked> 與 FIFI 共享</label><label><input type="radio" name="visibility" value="private"> 🔒 只有威翔</label></fieldset>` : ""}</form>${state.lists.length > 1 ? `<p class="sort-hint">按住清單右側的 ☰ 可拖曳排序</p>` : ""}<nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<div class="list-entry"><button type="button" class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}${list.visibility === "private" ? " 🔒" : ""}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button><button type="button" class="drag-handle" data-drag="${esc(list.id)}" aria-label="按住拖曳「${esc(list.title)}」調整順序" title="拖曳清單排序" ${state.busy ? "disabled" : ""}>☰</button></div>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
+  app.innerHTML = `<div class="workspace"><button type="button" class="sidebar-scrim" id="close-sidebar" aria-label="關閉清單側邊欄" tabindex="-1"></button><aside class="sidebar" id="sidebar" aria-label="所有清單"><div class="sidebar-top"><div class="eyebrow">我的空間</div><button type="button" class="sidebar-close" id="close-sidebar-button" aria-label="關閉清單側邊欄">×</button></div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><div class="create-form-row"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></div>${state.canCreatePrivate ? `<fieldset class="scope-choices"><legend>誰可以看到？</legend><label><input type="radio" name="visibility" value="shared" checked> 與 FIFI 共享</label><label><input type="radio" name="visibility" value="private"> 🔒 只有威翔</label></fieldset>` : ""}</form>${state.lists.length > 1 ? `<p class="sort-hint">按住清單右側的 ☰ 可拖曳排序</p>` : ""}<nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<div class="list-entry"><button type="button" class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}${list.visibility === "private" ? " 🔒" : ""}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button><button type="button" class="drag-handle" data-drag="${esc(list.id)}" aria-label="按住拖曳「${esc(list.title)}」調整順序" title="拖曳清單排序" ${state.busy ? "disabled" : ""}>☰</button></div>`).join("")}</nav></aside><section class="detail"><button type="button" class="sidebar-toggle" id="open-sidebar" aria-controls="sidebar" aria-expanded="${state.drawerOpen}"><span aria-hidden="true">☰</span> 清單 <span class="sidebar-count">${state.lists.length}</span></button>${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
   const root = document.getElementById("detail-body");
-  if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>替它取個名字，再加入想完成的事項。</p></div>`; return; }
+  if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>點「清單」打開側邊欄，替清單取個名字。</p></div>`; return; }
   if (!detail || detail.list.id !== selected.id) { root.innerHTML = `<div class="blank"><h2>正在開啟清單…</h2></div>`; return; }
   root.innerHTML = `<div class="detail-top"><div><div class="eyebrow">${selected.visibility === "private" ? "🔒 私人清單 · 只有威翔可見" : "與 FIFI 共享的清單"}</div><h2>${esc(selected.title)}</h2><p class="muted">${detail.members.length} 位成員 · ${done} / ${items.length} 項已完成</p></div><button type="button" id="delete-list" class="delete-list" ${state.busy ? "disabled" : ""}>刪除清單</button></div><div class="progress" role="progressbar" aria-label="完成進度" aria-valuenow="${done}" aria-valuemax="${items.length || 1}"><span style="width:${items.length ? done / items.length * 100 : 0}%"></span></div><div class="card"><h3 class="card-title">待完成 <small>${items.length - done}</small>${items.length > 1 ? `<span class="item-sort-hint">按住 ☰ 拖曳排序</span>` : ""}</h3><div id="todo-items"></div><form id="item-form" class="add-form"><span aria-hidden="true">＋</span><input class="input" name="title" aria-label="新增待辦項目" placeholder="新增一個項目…" maxlength="120" required><button class="button" ${state.busy ? "disabled" : ""}>新增</button></form></div>${done ? `<div class="card"><h3 class="card-title">已完成 <small>${done}</small></h3><div id="done-items"></div></div>` : ""}<div class="members">成員<div>${detail.members.map(member => `<span class="pill">${esc(member.name)}</span>`).join("")}</div></div>`;
   const todo = document.getElementById("todo-items");
@@ -212,19 +242,24 @@ app.addEventListener("keydown", event => {
 });
 
 app.addEventListener("click", async event => {
+  if (event.target.closest("#open-sidebar")) { state.drawerOpen = true; render(); document.getElementById("close-sidebar-button")?.focus(); return; }
+  if (event.target.closest("#close-sidebar, #close-sidebar-button")) { state.drawerOpen = false; render(); document.getElementById("open-sidebar")?.focus(); return; }
   if (event.target.closest("#delete-list, .delete-list-trigger")) {
     const selected = state.lists.find(list => list.id === state.selected);
     if (!selected || state.busy) return;
     if (!confirm(selected.visibility === "private" ? `確定刪除私人清單「${selected.title}」和裡面的所有項目嗎？無法復原。` : `確定刪除「${selected.title}」和裡面的所有項目嗎？兩人的清單都會移除，無法復原。`)) return;
-    await mutate("deleteList", { listId: selected.id }, () => { state.selected = ""; state.detail = null; });
+    await mutate("deleteList", { listId: selected.id }, () => { state.selected = ""; state.detail = null; state.drawerOpen = false; });
     return;
   }
   const list = event.target.closest("[data-list]");
-  if (list) { state.selected = list.dataset.list; state.detail = null; render(); await load(); }
+  if (list) { state.selected = list.dataset.list; state.detail = null; state.drawerOpen = false; render(); await load(); }
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && state.drawerOpen) { state.drawerOpen = false; render(); document.getElementById("open-sidebar")?.focus(); }
 });
 account.addEventListener("click", event => {
   if (event.target.id !== "logout-button") return;
-  localStorage.removeItem(STORAGE_KEY); state.session = ""; state.name = ""; state.canCreatePrivate = false; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; render();
+  localStorage.removeItem(STORAGE_KEY); state.session = ""; state.name = ""; state.canCreatePrivate = false; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; state.drawerOpen = false; render();
 });
 
 app.addEventListener("submit", async event => {
@@ -236,13 +271,13 @@ app.addEventListener("submit", async event => {
     catch (error) { state.error = error.message; }
     state.busy = false; render(); return;
   }
-  if (form.id === "create-form") { const title = form.elements.title.value.trim(); const visibility = form.elements.visibility?.value || "shared"; if (title) await mutate("createList", { title, visibility }, result => { state.selected = result.id; state.detail = null; }); }
+  if (form.id === "create-form") { const title = form.elements.title.value.trim(); const visibility = form.elements.visibility?.value || "shared"; if (title) await mutate("createList", { title, visibility }, result => { state.selected = result.id; state.detail = null; state.drawerOpen = false; }); }
   if (form.id === "item-form") { const title = form.elements.title.value.trim(); if (title) await changeItem("addItem", { title }); }
 });
 
 render();
 if (state.session) void load();
-setInterval(() => { if (state.session && !document.hidden && document.activeElement?.tagName !== "INPUT" && !state.busy && !dragging) void load(true); }, 4000);
+setInterval(() => { if (state.session && !document.hidden && !state.drawerOpen && document.activeElement?.tagName !== "INPUT" && !state.busy && !dragging) void load(true); }, 4000);
 
 </script>
 </body>
