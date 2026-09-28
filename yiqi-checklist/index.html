@@ -18,6 +18,7 @@
 .sidebar-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.sidebar-heading h1{margin-bottom:20px}.sidebar-heading .delete-list{white-space:nowrap;margin-bottom:14px;padding:7px 9px}
 .sort-hint{font-size:12px;color:#7a89a0;margin:15px 0 -12px}.list-entry{display:flex;align-items:stretch;gap:5px;min-width:0}.list-entry .list-tab{flex:1;min-width:0;max-width:none}.drag-handle{flex:none;align-self:stretch;border:0;border-radius:12px;background:transparent;color:#8a9ab7;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:20px;width:36px;padding:0}.drag-handle:active{cursor:grabbing}.drag-handle:focus-visible{outline:2px solid #315be8}.list-entry.dragging{opacity:.62}.list-entry.dragging .drag-handle{color:#315be8}@media(max-width:720px){.list-entry{flex:none;width:228px}.list-entry .list-tab{max-width:none}.sort-hint{margin:14px 0 0}.drag-handle{background:#eef2ff;color:#315be8}}
 .item-sort-hint{float:right;color:#8290a3;font-size:12px;font-weight:500;margin-top:4px}.item-drag-handle{flex:none;border:0;border-radius:9px;background:#eef2ff;color:#315be8;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;font-size:18px;width:30px;height:34px;padding:0}.item-drag-handle:active{cursor:grabbing}.item-drag-handle:focus-visible{outline:2px solid #315be8}.item.dragging{background:#f1f5ff;opacity:.68}@media(max-width:720px){.item-drag-handle{width:30px;height:38px}}
+.create-form{display:block}.create-form-row{display:flex;gap:8px}.scope-choices{border:0;margin:13px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}.scope-choices legend{color:#667991;font-size:12px;font-weight:700;margin-bottom:6px}.scope-choices label{border:1px solid #dce4f3;border-radius:10px;background:#fff;color:#405574;display:flex;align-items:center;gap:4px;padding:8px 9px;font-size:12px;cursor:pointer;white-space:nowrap}.scope-choices label:has(input:checked){border-color:#9eb7ff;background:#edf2ff;color:#254ccb}.scope-choices input{accent-color:#315be8;margin:0}
 
   </style>
   <title>一起勾｜多人清單</title>
@@ -31,7 +32,7 @@ const API = `${BACKEND}/api/external`;
 const app = document.getElementById("app");
 const account = document.getElementById("account");
 const STORAGE_KEY = "yiqi_password_session";
-const state = { session: localStorage.getItem(STORAGE_KEY) || "", name: "", selected: "", lists: [], detail: null, error: "", message: "", busy: false };
+const state = { session: localStorage.getItem(STORAGE_KEY) || "", name: "", canCreatePrivate: false, selected: "", lists: [], detail: null, error: "", message: "", busy: false };
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
 
 async function api(action, fields = {}, authenticated = true) {
@@ -63,11 +64,11 @@ function renderWorkspace() {
   const detail = state.detail;
   const items = detail?.items || [];
   const done = items.filter(item => item.done).length;
-  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></form>${state.lists.length > 1 ? `<p class="sort-hint">按住清單右側的 ☰ 可拖曳排序</p>` : ""}<nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<div class="list-entry"><button type="button" class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button><button type="button" class="drag-handle" data-drag="${esc(list.id)}" aria-label="按住拖曳「${esc(list.title)}」調整順序" title="拖曳清單排序" ${state.busy ? "disabled" : ""}>☰</button></div>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
+  app.innerHTML = `<div class="workspace"><aside class="sidebar"><div class="eyebrow">我的空間</div><div class="sidebar-heading"><h1>所有清單</h1>${selected ? `<button type="button" class="delete-list delete-list-trigger" ${state.busy ? "disabled" : ""}>刪除目前清單</button>` : ""}</div><form id="create-form" class="create-form"><div class="create-form-row"><input class="input" name="title" aria-label="新清單名稱" maxlength="120" placeholder="新清單名稱" required><button class="button" aria-label="建立清單">＋</button></div>${state.canCreatePrivate ? `<fieldset class="scope-choices"><legend>誰可以看到？</legend><label><input type="radio" name="visibility" value="shared" checked> 與 FIFI 共享</label><label><input type="radio" name="visibility" value="private"> 🔒 只有威翔</label></fieldset>` : ""}</form>${state.lists.length > 1 ? `<p class="sort-hint">按住清單右側的 ☰ 可拖曳排序</p>` : ""}<nav class="list-nav" aria-label="選擇清單">${state.lists.map(list => `<div class="list-entry"><button type="button" class="list-tab ${list.id === state.selected ? "active" : ""}" data-list="${esc(list.id)}"><span class="list-icon">✓</span><span><strong>${esc(list.title)}${list.visibility === "private" ? " 🔒" : ""}</strong><small>${Number(list.completed)} / ${Number(list.total)} 已完成</small></span></button><button type="button" class="drag-handle" data-drag="${esc(list.id)}" aria-label="按住拖曳「${esc(list.title)}」調整順序" title="拖曳清單排序" ${state.busy ? "disabled" : ""}>☰</button></div>`).join("")}</nav></aside><section class="detail">${alert(state.error)}${alert(state.message, true)}<div id="detail-body"></div></section></div>`;
   const root = document.getElementById("detail-body");
   if (!selected) { root.innerHTML = `<div class="blank"><h2>從一份清單開始</h2><p>替它取個名字，再加入想完成的事項。</p></div>`; return; }
   if (!detail || detail.list.id !== selected.id) { root.innerHTML = `<div class="blank"><h2>正在開啟清單…</h2></div>`; return; }
-  root.innerHTML = `<div class="detail-top"><div><div class="eyebrow">共享清單</div><h2>${esc(selected.title)}</h2><p class="muted">${detail.members.length} 位成員 · ${done} / ${items.length} 項已完成</p></div><button type="button" id="delete-list" class="delete-list" ${state.busy ? "disabled" : ""}>刪除清單</button></div><div class="progress" role="progressbar" aria-label="完成進度" aria-valuenow="${done}" aria-valuemax="${items.length || 1}"><span style="width:${items.length ? done / items.length * 100 : 0}%"></span></div><div class="card"><h3 class="card-title">待完成 <small>${items.length - done}</small>${items.length > 1 ? `<span class="item-sort-hint">按住 ☰ 拖曳排序</span>` : ""}</h3><div id="todo-items"></div><form id="item-form" class="add-form"><span aria-hidden="true">＋</span><input class="input" name="title" aria-label="新增待辦項目" placeholder="新增一個項目…" maxlength="120" required><button class="button" ${state.busy ? "disabled" : ""}>新增</button></form></div>${done ? `<div class="card"><h3 class="card-title">已完成 <small>${done}</small></h3><div id="done-items"></div></div>` : ""}<div class="members">成員<div>${detail.members.map(member => `<span class="pill">${esc(member.name)}</span>`).join("")}</div></div>`;
+  root.innerHTML = `<div class="detail-top"><div><div class="eyebrow">${selected.visibility === "private" ? "🔒 私人清單 · 只有威翔可見" : "與 FIFI 共享的清單"}</div><h2>${esc(selected.title)}</h2><p class="muted">${detail.members.length} 位成員 · ${done} / ${items.length} 項已完成</p></div><button type="button" id="delete-list" class="delete-list" ${state.busy ? "disabled" : ""}>刪除清單</button></div><div class="progress" role="progressbar" aria-label="完成進度" aria-valuenow="${done}" aria-valuemax="${items.length || 1}"><span style="width:${items.length ? done / items.length * 100 : 0}%"></span></div><div class="card"><h3 class="card-title">待完成 <small>${items.length - done}</small>${items.length > 1 ? `<span class="item-sort-hint">按住 ☰ 拖曳排序</span>` : ""}</h3><div id="todo-items"></div><form id="item-form" class="add-form"><span aria-hidden="true">＋</span><input class="input" name="title" aria-label="新增待辦項目" placeholder="新增一個項目…" maxlength="120" required><button class="button" ${state.busy ? "disabled" : ""}>新增</button></form></div>${done ? `<div class="card"><h3 class="card-title">已完成 <small>${done}</small></h3><div id="done-items"></div></div>` : ""}<div class="members">成員<div>${detail.members.map(member => `<span class="pill">${esc(member.name)}</span>`).join("")}</div></div>`;
   const todo = document.getElementById("todo-items");
   const doneRoot = document.getElementById("done-items");
   if (!items.some(item => !item.done)) todo.innerHTML = `<p class="empty-row">${items.length ? "全部完成了，做得好！" : "還沒有項目，從下面新增一件事。"}</p>`;
@@ -91,7 +92,7 @@ async function load(quiet = false) {
   if (!state.session) { render(); return; }
   try {
     const [who, lists] = await Promise.all([api("whoami"), api("lists")]);
-    state.name = who.name; state.lists = lists.lists;
+    state.name = who.name; state.canCreatePrivate = Boolean(who.canCreatePrivate); state.lists = lists.lists;
     if (!state.lists.some(list => list.id === state.selected)) state.selected = state.lists[0]?.id || "";
     state.detail = state.selected ? await api("detail", { listId: state.selected }) : null;
     if (!quiet) state.error = "";
@@ -214,7 +215,7 @@ app.addEventListener("click", async event => {
   if (event.target.closest("#delete-list, .delete-list-trigger")) {
     const selected = state.lists.find(list => list.id === state.selected);
     if (!selected || state.busy) return;
-    if (!confirm(`確定刪除「${selected.title}」和裡面的所有項目嗎？兩人的清單都會移除，無法復原。`)) return;
+    if (!confirm(selected.visibility === "private" ? `確定刪除私人清單「${selected.title}」和裡面的所有項目嗎？無法復原。` : `確定刪除「${selected.title}」和裡面的所有項目嗎？兩人的清單都會移除，無法復原。`)) return;
     await mutate("deleteList", { listId: selected.id }, () => { state.selected = ""; state.detail = null; });
     return;
   }
@@ -223,7 +224,7 @@ app.addEventListener("click", async event => {
 });
 account.addEventListener("click", event => {
   if (event.target.id !== "logout-button") return;
-  localStorage.removeItem(STORAGE_KEY); state.session = ""; state.name = ""; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; render();
+  localStorage.removeItem(STORAGE_KEY); state.session = ""; state.name = ""; state.canCreatePrivate = false; state.lists = []; state.detail = null; state.selected = ""; state.error = ""; render();
 });
 
 app.addEventListener("submit", async event => {
@@ -235,7 +236,7 @@ app.addEventListener("submit", async event => {
     catch (error) { state.error = error.message; }
     state.busy = false; render(); return;
   }
-  if (form.id === "create-form") { const title = form.elements.title.value.trim(); if (title) await mutate("createList", { title }, result => { state.selected = result.id; state.detail = null; }); }
+  if (form.id === "create-form") { const title = form.elements.title.value.trim(); const visibility = form.elements.visibility?.value || "shared"; if (title) await mutate("createList", { title, visibility }, result => { state.selected = result.id; state.detail = null; }); }
   if (form.id === "item-form") { const title = form.elements.title.value.trim(); if (title) await changeItem("addItem", { title }); }
 });
 
