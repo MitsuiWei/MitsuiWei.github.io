@@ -26,6 +26,10 @@
 /* iOS WebKit can paint transformed descendants through their parent's backface. */
 .card-turn.flipped .card-back{visibility:hidden;transition:visibility 0s linear .34s}
 .card-turn:not(.flipped) .card-back{visibility:visible;transition:visibility 0s linear .34s}
+/* Hide the back illustration as soon as the turn begins. Safari otherwise
+   briefly paints it over the emerging front text around the halfway frame. */
+.card-turn.flipped .back-art{visibility:hidden;transition:none}
+.card-turn:not(.flipped) .back-art{visibility:visible;transition:visibility 0s linear .34s}
 @media(max-width:650px){
  .stack,.card-turn,.card-front{min-height:475px}
  .card-front{padding:26px 25px 25px}

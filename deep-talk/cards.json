@@ -117,6 +117,19 @@
     "review_notes": null
   },
   {
+    "id": "MTW-1-010",
+    "stars": 1,
+    "star_style": "hollow",
+    "text_zh": "所有玩家一起合照一張！並上傳打卡！",
+    "title_en": "Group Selfie Time!",
+    "text_en": "Take a group photo together and post it!",
+    "participant_mode": "all_players",
+    "selected_player_count": null,
+    "time_limit_seconds": null,
+    "turn_order": "unspecified",
+    "review_notes": null
+  },
+  {
     "id": "MTW-1-S-001",
     "stars": 1,
     "star_style": "solid",
