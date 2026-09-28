@@ -8,3 +8,32 @@
 .stack{aspect-ratio:auto}.card-turn{height:auto}.card-face{height:auto}.card-back{height:100%}.card-front{min-height:453px}.deck-short{display:none}.text-button,.secondary-actions .text-button{font-size:14px}.intro-copy{font-size:16px}.deck-heading,.table-heading,#draw-hint{font-size:14px}.aside-note{font-size:14px}.front-footer{font-size:14px}.help-note p{font-size:14px}.deck-sub{font-size:14px}.deck-count{font-size:14px}
 @media(max-width:650px){.deck-full{display:none}.deck-short{display:inline}.deck-text{font-size:14px}.intro-copy{font-size:14px}.card-front{min-height:390px}.table-heading,#draw-hint{font-size:14px}.front-footer{font-size:12px}}
 @media(min-width:651px){.deck-swatch{font-size:12px;letter-spacing:-2px}}
+
+/* The printed card has a quiet charcoal face: star, Chinese prompt, English prompt,
+   and a two-line gold deck name. The front grows for unusually long questions. */
+.stack{min-height:500px}
+.card-turn{min-height:500px}
+.card-front{background:#35353c;border:0;min-height:500px;padding:31px 30px 28px}
+.question-body{justify-content:flex-start;padding:49px 0 44px}
+#question{font-size:22px;line-height:1.55;letter-spacing:.04em;overflow-wrap:anywhere}
+#english{margin-top:32px;color:#f4f1e9;font-family:Georgia,"Times New Roman",serif;font-size:15px;line-height:1.48;overflow-wrap:anywhere}
+#english-title{font-weight:700;color:inherit}
+#english-text{font-size:inherit;line-height:inherit}
+#translation-note{margin-top:12px}
+.front-footer{display:block;border:0;padding:0;margin-top:auto;color:var(--yellow);font-size:15px}
+#front-category{display:block;color:var(--yellow);font-family:"Songti TC","PMingLiU",serif;font-size:17px;letter-spacing:.08em}
+#front-category-en{display:block;margin-top:4px;color:var(--yellow);font-family:Georgia,"Times New Roman",serif;font-size:18px;font-style:normal;line-height:1.25}
+/* iOS WebKit can paint transformed descendants through their parent's backface. */
+.card-turn.flipped .card-back{visibility:hidden;transition:visibility 0s linear .34s}
+.card-turn:not(.flipped) .card-back{visibility:visible;transition:visibility 0s linear .34s}
+@media(max-width:650px){
+ .stack,.card-turn,.card-front{min-height:475px}
+ .card-front{padding:26px 25px 25px}
+ .question-body{padding:44px 0 40px}
+ #question{font-size:21px;line-height:1.55}
+ #english{font-size:15px;line-height:1.5;margin-top:28px}
+ .front-footer{font-size:14px}
+ #front-category{font-size:16px}
+ #front-category-en{font-size:17px}
+}
+@media(max-width:360px){.card-front{padding:23px 22px}.question-body{padding-top:36px}#question{font-size:19px}#english{font-size:14px}}
