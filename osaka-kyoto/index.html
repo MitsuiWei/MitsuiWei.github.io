@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f49">
+  <meta name="description" content="2026 大阪與京都旅行行程，快速查看每日安排、地圖與 IG 收藏。">
+  <title>大阪・京都旅行 | 2026 行程</title>
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M12 21s7-5.1 7-12a7 7 0 1 0-14 0c0 6.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/></symbol>
+    <symbol id="i-instagram" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".8" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="m4 20 4.5-1 10-10a2.2 2.2 0 0 0-3.1-3.1l-10 10L4 20Z"/><path d="m13.8 7.5 3 3"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 8.4c0 4.7-8.8 10.4-8.8 10.4S3.2 13.1 3.2 8.4a4.6 4.6 0 0 1 8.8-1.7 4.6 4.6 0 0 1 8.8 1.7Z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h11a4 4 0 0 0 .2-8A6.5 6.5 0 0 0 5.7 9 4.5 4.5 0 0 0 7 18Z"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-top"><span class="brand-mark">旅</span><span class="hero-small">2026 · JAPAN TRIP</span><button id="sync-button" class="sync-button" type="button"><svg><use href="#i-cloud"/></svg><span id="sync-label">本機儲存</span></button></div>
+      <h1>大阪<span class="hero-dot">・</span>京都</h1>
+      <div class="hero-bottom"><p>11 月 29 日 — 12 月 6 日</p><span>8 天旅行手帳</span></div>
+      <div class="hero-route" aria-hidden="true"><span>OSAKA</span><i></i><span>KYOTO</span></div>
+    </header>
+
+    <main>
+      <div class="view-tools">
+        <div class="view-title"><h2 id="view-heading">每日行程</h2><span id="view-count"></span></div>
+        <label class="search-wrap"><svg><use href="#i-search"/></svg><input id="search" type="search" placeholder="搜尋地點或餐廳" aria-label="搜尋行程"></label>
+      </div>
+      <nav id="day-tabs" class="day-tabs" aria-label="選擇日期"></nav>
+      <section id="content" class="content" aria-live="polite"></section>
+    </main>
+
+    <button id="add-button" class="add-button" type="button"><svg><use href="#i-plus"/></svg><span>新增行程</span></button>
+    <nav class="bottom-nav" aria-label="主要導覽">
+      <button data-view="days" class="active" type="button"><span class="nav-icon">◫</span>行程</button>
+      <button data-view="favorites" type="button"><svg><use href="#i-heart"/></svg>收藏</button>
+      <button data-view="lists" type="button"><span class="nav-icon">☷</span>清單</button>
+      <button data-view="settings" type="button"><svg><use href="#i-cloud"/></svg>同步</button>
+    </nav>
+  </div>
+
+  <dialog id="editor" class="editor">
+    <form id="editor-form" method="dialog">
+      <div class="dialog-top"><h2 id="editor-title">新增行程</h2><button class="icon-button" type="button" data-close aria-label="關閉"><svg><use href="#i-close"/></svg></button></div>
+      <div class="form-scroll">
+        <label>地點或項目名稱<input name="title" required maxlength="100" placeholder="例如：清水寺"></label>
+        <div class="form-row"><label>安排日期<select name="day"></select></label><label>分類<select name="category"><option>景點</option><option>早餐</option><option>午餐</option><option>晚餐</option><option>甜點</option><option>購物</option><option>備註</option></select></label></div>
+        <label>區域<input name="section" maxlength="50" placeholder="例如：心齋橋"></label>
+        <label>Google Maps 搜尋文字<input name="mapQuery" maxlength="160" placeholder="留空則不顯示地圖按鈕"></label>
+        <label>IG 或參考連結<input name="igUrl" type="url" placeholder="https://www.instagram.com/..."></label>
+        <label>備註<textarea name="note" rows="3" maxlength="500" placeholder="交通、營業時間、想吃的餐點…"></textarea></label>
+        <label class="check-label"><input name="favorite" type="checkbox"> 加入收藏</label>
+      </div>
+      <div class="form-actions"><button id="delete-button" class="delete-button" type="button">刪除</button><button id="move-up" class="move-button" type="button">上移</button><button id="move-down" class="move-button" type="button">下移</button><button class="save-button" type="submit">儲存變更</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
+
