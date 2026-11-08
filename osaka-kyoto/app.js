@@ -227,7 +227,7 @@ content.addEventListener('change', async event => {
 });
 
 async function init() {
-  const response = await fetch('./itinerary.json');
+  const response = await fetch('./itinerary.json?v=20261108e');
   if (!response.ok) throw new Error('行程資料載入失敗');
   const initial = await response.json();
   data = initial;
