@@ -65,7 +65,7 @@ function entryHtml(item) {
   return `<article class="entry ${item.done ? 'done' : ''}">
     <div class="entry-marker"><button class="done-toggle" data-done="${escapeHtml(item.id)}" type="button" aria-label="${item.done ? '標記未完成' : '標記完成'}：${escapeHtml(item.title)}" aria-pressed="${Boolean(item.done)}">${icon('check')}</button></div>
     <div class="entry-main"><div class="entry-topline"><span class="category">${escapeHtml(item.category || '景點')}</span>${item.favorite ? '<span class="favorite-mark" aria-label="收藏">★</span>' : ''}</div>${title}${item.note ? `<p class="entry-note">${escapeHtml(item.note)}</p>` : ''}</div>
-    <div class="entry-actions">${map ? `<a href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="Google Maps：${escapeHtml(item.title)}">${icon('map')}</a>` : ''}${links.map((link, n) => { const url = safeUrl(link.url); return url ? `<a class="instagram" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 的參考連結 ${n + 1}" title="${escapeHtml(link.text || '參考連結')}">${icon('instagram')}</a>` : ''; }).join('')}<button data-edit="${escapeHtml(item.id)}" type="button" aria-label="編輯 ${escapeHtml(item.title)}">${icon('edit')}</button></div>
+    <div class="entry-actions">${map ? `<a href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="Google Maps：${escapeHtml(item.title)}">${icon('map')}</a>` : ''}${links.map((link, n) => { const url = safeUrl(link.url); const isInstagram = url.includes('instagram.com/'); return url ? `<a class="${isInstagram ? 'instagram' : 'reference'}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 的參考連結 ${n + 1}" title="${escapeHtml(link.text || '參考連結')}">${icon(isInstagram ? 'instagram' : 'link')}</a>` : ''; }).join('')}<button data-edit="${escapeHtml(item.id)}" type="button" aria-label="編輯 ${escapeHtml(item.title)}">${icon('edit')}</button></div>
   </article>`;
 }
 
@@ -100,7 +100,7 @@ function renderContent() {
     content.innerHTML = favorites.length ? sectionsHtml(favorites) : '<div class="empty-state"><strong>還沒有收藏地點</strong><p>編輯行程時可將項目加入收藏。</p></div>';
   } else if (view === 'lists') {
     heading.textContent = '購物與參考清單'; count.textContent = `${data.checklist.length} 份清單`;
-    content.innerHTML = `<div class="list-group"><h3>出發前與旅途中</h3>${data.checklist.map(item => `<div class="checklist-item"><span>${escapeHtml(item.title)}</span><div class="link-row">${(item.links || []).map((link,n) => { const url = safeUrl(link.url); return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 參考連結 ${n + 1}">${icon('instagram')}</a>` : ''; }).join('')}</div></div>`).join('')}</div>`;
+    content.innerHTML = `<div class="list-group"><h3>出發前與旅途中</h3>${data.checklist.map(item => `<div class="checklist-item"><span>${escapeHtml(item.title)}</span><div class="link-row">${(item.links || []).map((link,n) => { const url = safeUrl(link.url); return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 參考連結 ${n + 1}">${icon(url.includes('instagram.com/') ? 'instagram' : 'link')}</a>` : ''; }).join('')}</div></div>`).join('')}</div>`;
   } else {
     heading.textContent = '同步與備份'; count.textContent = '';
     const configured = Boolean(sync);
