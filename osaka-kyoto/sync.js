@@ -1,4 +1,4 @@
-import { firebaseConfig } from './firebase-config.js';
+import { firebaseConfig } from './firebase-config.js?v=20261108b';
 
 const tripId = 'osaka-kyoto-2026';
 

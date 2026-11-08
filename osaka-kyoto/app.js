@@ -1,4 +1,4 @@
-import { createSync } from './sync.js';
+import { createSync } from './sync.js?v=20261108b';
 
 const $ = (selector) => document.querySelector(selector);
 const storageKey = 'osaka-kyoto-itinerary-2026-v1';
