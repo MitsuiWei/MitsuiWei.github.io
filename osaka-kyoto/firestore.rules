@@ -1,6 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /sharedTrips/osaka-kyoto-2026 {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['data', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['data', 'updatedAt'])
+        && request.resource.data.data is map
+        && request.resource.data.data.days is list
+        && request.resource.data.data.days.size() == 8
+        && request.resource.data.data.checklist is list;
+      allow delete: if false;
+    }
     match /users/{userId}/trips/{tripId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

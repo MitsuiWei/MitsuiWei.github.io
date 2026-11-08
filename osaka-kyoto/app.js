@@ -1,7 +1,7 @@
-import { createSync } from './sync.js?v=20261108b';
+import { createSync } from './sync.js?v=20261108d';
 
 const $ = (selector) => document.querySelector(selector);
-const storageKey = 'osaka-kyoto-itinerary-2026-v1';
+const storageKey = 'osaka-kyoto-shared-2026-v1';
 const dayTabs = $('#day-tabs');
 const content = $('#content');
 const editor = $('#editor');
@@ -12,7 +12,7 @@ let activeDay = 0;
 let search = '';
 let editingId = null;
 let sync = null;
-let cloudUser = null;
+let cloudReady = false;
 let toastTimer;
 
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
@@ -30,10 +30,21 @@ function toast(message) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-function save() {
+function save(change) {
   localStorage.setItem(storageKey, JSON.stringify(data));
   render();
-  if (sync && cloudUser) sync.save(data).catch(error => { setSyncStatus('同步失敗'); toast(`雲端儲存失敗：${error.message}`); });
+  setSyncStatus('儲存中');
+  sync.apply(change).then(() => setSyncStatus('即時同步中')).catch(async error => {
+    setSyncStatus('同步失敗');
+    toast(`雲端儲存失敗：${error.message}`);
+    try { await sync.refresh(); } catch (refreshError) { console.error(refreshError); }
+  });
+}
+
+function canEdit() {
+  if (cloudReady && sync) return true;
+  toast('請等候共用行程連線');
+  return false;
 }
 
 function setSyncStatus(label) {
@@ -102,9 +113,8 @@ function renderContent() {
     heading.textContent = '購物與參考清單'; count.textContent = `${data.checklist.length} 份清單`;
     content.innerHTML = `<div class="list-group"><h3>出發前與旅途中</h3>${data.checklist.map(item => `<div class="checklist-item"><span>${escapeHtml(item.title)}</span><div class="link-row">${(item.links || []).map((link,n) => { const url = safeUrl(link.url); return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 參考連結 ${n + 1}">${icon(url.includes('instagram.com/') ? 'instagram' : 'link')}</a>` : ''; }).join('')}</div></div>`).join('')}</div>`;
   } else {
-    heading.textContent = '同步與備份'; count.textContent = '';
-    const configured = Boolean(sync);
-    content.innerHTML = `<div class="settings-panel"><h3>${cloudUser ? '已連接雲端行程' : configured ? '使用 Google 帳號同步' : '雲端同步設定中'}</h3><p>${cloudUser ? `目前以 ${escapeHtml(cloudUser.email || 'Google 帳號')} 同步。用同一個帳號在其他裝置登入，即可看到修改後的行程。` : configured ? '登入後，行程會儲存在你的私人雲端空間，並在其他裝置自動更新。' : '網站目前先把變更存於這台裝置。完成雲端設定後，即可使用 Google 帳號跨裝置同步。'}</p><span class="status">${icon('cloud')}${escapeHtml($('#sync-label').textContent)}</span><div class="settings-actions">${configured ? cloudUser ? '<button id="cloud-logout" type="button">登出 Google</button>' : '<button id="cloud-login" class="primary" type="button">使用 Google 登入</button>' : ''}<button id="export-data" type="button">下載行程備份</button><label>匯入行程備份<input id="import-data" type="file" accept="application/json,.json"></label></div><p class="settings-hint">備份檔可在其他裝置匯入。若已開啟雲端同步，匯入後也會同步更新。</p></div>`;
+    heading.textContent = '共用與備份'; count.textContent = '';
+    content.innerHTML = `<div class="settings-panel"><h3>大家共用同一份行程</h3><p>不需登入。任何人新增、編輯或勾選項目後，所有開著網站的人都會即時看到更新。</p><span class="status">${icon('cloud')}${escapeHtml($('#sync-label').textContent)}</span><div class="settings-actions"><button id="export-data" type="button">下載行程備份</button><label>匯入行程備份<input id="import-data" type="file" accept="application/json,.json"></label></div><p class="settings-hint">匯入備份會取代所有人目前看到的共用行程。</p></div>`;
   }
 }
 
@@ -116,6 +126,7 @@ function render() {
 }
 
 function openEditor(id = null) {
+  if (!canEdit()) return;
   editingId = id;
   const found = id ? findItem(id) : null;
   const item = found?.item;
@@ -139,6 +150,7 @@ function openEditor(id = null) {
 
 form.addEventListener('submit', event => {
   event.preventDefault();
+  if (!canEdit()) return;
   if (!form.reportValidity()) return;
   const targetDay = data.days[Number(form.elements.day.value)];
   const existing = editingId ? findItem(editingId) : null;
@@ -161,23 +173,25 @@ form.addEventListener('submit', event => {
   else targetDay.items.push(item);
   activeDay = data.days.indexOf(targetDay);
   view = 'days'; search = ''; $('#search').value = '';
-  editor.close(); save(); toast(existing ? '行程已更新' : '行程已新增');
+  editor.close(); save({ type:'upsert', item, day:activeDay }); toast(existing ? '行程已更新' : '行程已新增');
 });
 
 $('#delete-button').addEventListener('click', () => {
+  if (!canEdit()) return;
   const found = findItem(editingId);
   if (!found || !confirm(`確定刪除「${found.item.title}」？`)) return;
   found.day.items.splice(found.index, 1);
-  editor.close(); save(); toast('行程已刪除');
+  editor.close(); save({ type:'delete', id:editingId }); toast('行程已刪除');
 });
 
 function moveItem(direction) {
+  if (!canEdit()) return;
   const found = findItem(editingId);
   if (!found) return;
   const next = found.index + direction;
   if (next < 0 || next >= found.day.items.length) { toast('已在這天行程的最前或最後'); return; }
   [found.day.items[found.index], found.day.items[next]] = [found.day.items[next], found.day.items[found.index]];
-  editor.close(); save(); toast('順序已調整');
+  editor.close(); save({ type:'move', id:editingId, direction }); toast('順序已調整');
 }
 $('#move-up').addEventListener('click', () => moveItem(-1));
 $('#move-down').addEventListener('click', () => moveItem(1));
@@ -190,11 +204,9 @@ document.querySelector('.bottom-nav').addEventListener('click', event => { const
 $('#search').addEventListener('input', event => { search = event.target.value.trim().toLocaleLowerCase(); render(); });
 content.addEventListener('click', async event => {
   const done = event.target.closest('[data-done]');
-  if (done) { const found = findItem(done.dataset.done); if (found) { found.item.done = !found.item.done; save(); } return; }
+  if (done) { if (!canEdit()) return; const found = findItem(done.dataset.done); if (found) { found.item.done = !found.item.done; save({ type:'setDone', id:found.item.id, done:found.item.done }); } return; }
   const edit = event.target.closest('[data-edit]');
   if (edit) { openEditor(edit.dataset.edit); return; }
-  if (event.target.closest('#cloud-login')) { try { await sync.login(); } catch (error) { toast(`登入失敗：${error.message}`); } return; }
-  if (event.target.closest('#cloud-logout')) { try { await sync.logout(); } catch (error) { toast(`登出失敗：${error.message}`); } return; }
   if (event.target.closest('#export-data')) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
@@ -203,13 +215,14 @@ content.addEventListener('click', async event => {
 });
 content.addEventListener('change', async event => {
   if (event.target.id !== 'import-data') return;
+  if (!canEdit()) return;
   const file = event.target.files?.[0];
   if (!file) return;
   try {
     const imported = JSON.parse(await file.text());
     if (!Array.isArray(imported.days) || imported.days.length !== 8 || !imported.days.every(day => Array.isArray(day.items))) throw new Error('檔案格式不正確');
-    if (!confirm('匯入備份會取代目前的行程，確定繼續？')) return;
-    data = imported; save(); toast('行程已匯入');
+    if (!confirm('匯入備份會取代所有人目前看到的共用行程，確定繼續？')) return;
+    data = imported; save({ type:'replace', data:imported }); toast('行程已匯入');
   } catch (error) { toast(`無法匯入：${error.message}`); }
 });
 
@@ -217,13 +230,14 @@ async function init() {
   const response = await fetch('./itinerary.json');
   if (!response.ok) throw new Error('行程資料載入失敗');
   const initial = await response.json();
-  try { data = JSON.parse(localStorage.getItem(storageKey)) || initial; } catch { data = initial; }
+  data = initial;
   render();
+  setSyncStatus('連線中');
   try {
     sync = await createSync({
-      getLocal: () => data,
+      initial,
       onRemote: remote => { data = remote; localStorage.setItem(storageKey, JSON.stringify(data)); render(); },
-      onUser: user => { cloudUser = user; setSyncStatus(user ? '已連接雲端' : '本機儲存'); },
+      onReady: ready => { cloudReady = ready; if (ready) render(); },
       onStatus: status => setSyncStatus(status),
     });
     render();
