@@ -104,7 +104,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270206/27000443/"
         }
       ]
     },
@@ -161,7 +162,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2706/A270602/27129517/"
         }
       ]
     },
@@ -233,7 +235,8 @@
             }
           ],
           "favorite": true,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270202/27002336/"
         },
         {
           "id": "item-22-0",
@@ -425,7 +428,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270201/27120231/"
         },
         {
           "id": "item-36-0",
@@ -441,7 +445,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270201/27084117/"
         },
         {
           "id": "item-37-0",
@@ -632,7 +637,8 @@
             }
           ],
           "favorite": true,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270101/27130931/"
         },
         {
           "id": "item-49-0",
@@ -648,7 +654,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270103/27002275/"
         },
         {
           "id": "item-50-0",
@@ -664,7 +671,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270101/27012248/"
         },
         {
           "id": "item-51-0",
@@ -691,7 +699,8 @@
           "mapQuery": "阪神百貨 B1 花枝燒 大阪 日本",
           "links": [],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270101/27131466/"
         },
         {
           "id": "item-52-1",
@@ -702,7 +711,8 @@
           "mapQuery": "松葉立食串炸 大阪 日本",
           "links": [],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270101/27001927/"
         },
         {
           "id": "item-52-2",
@@ -729,7 +739,8 @@
             }
           ],
           "favorite": true,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/osaka/A2701/A270101/27003658/"
         }
       ]
     },
@@ -943,7 +954,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/kyoto/A2601/A260101/26030973/"
         },
         {
           "id": "item-70-0",
@@ -959,7 +971,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/kyoto/A2601/A260101/26002070/"
         },
         {
           "id": "item-71-0",
@@ -1108,7 +1121,8 @@
             }
           ],
           "favorite": false,
-          "done": false
+          "done": false,
+          "tabelogUrl": "https://tabelog.com/kyoto/A2601/A260403/26002143/"
         },
         {
           "id": "item-80-0",

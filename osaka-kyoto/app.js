@@ -19,6 +19,9 @@ const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"></use></s
 const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
 const safeUrl = (value) => { try { const url = new URL(value); return ['https:', 'http:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } };
 const mapsUrl = (query) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+const foodCategories = new Set(['早餐', '午餐', '晚餐', '甜點']);
+const isTabelogUrl = (value) => { try { const url = new URL(value); return url.protocol === 'https:' && (url.hostname === 'tabelog.com' || url.hostname.endsWith('.tabelog.com')); } catch { return false; } };
+const tabelogSearchUrl = (title, city) => { const query = `${title} ${city || ''}`.trim(); return `https://tabelog.com/rstLst/?${new URLSearchParams({ vs:'1', sa:city || '', sk:query, sw:query })}`; };
 const dateLabel = (value) => new Intl.DateTimeFormat('zh-TW', { month:'numeric', day:'numeric', weekday:'short', timeZone:'Asia/Tokyo' }).format(new Date(`${value}T12:00:00+09:00`));
 const fullDateLabel = (value) => new Intl.DateTimeFormat('zh-TW', { month:'long', day:'numeric', weekday:'long', timeZone:'Asia/Tokyo' }).format(new Date(`${value}T12:00:00+09:00`));
 
@@ -69,18 +72,21 @@ function renderTabs() {
   selected?.scrollIntoView({ block:'nearest', inline:'nearest' });
 }
 
-function entryHtml(item) {
+function entryHtml(item, city = '') {
   const map = item.mapQuery?.trim();
   const links = Array.isArray(item.links) ? item.links : [];
+  const directTabelog = isTabelogUrl(item.tabelogUrl) ? item.tabelogUrl : '';
+  const tabelog = directTabelog || (foodCategories.has(item.category) ? tabelogSearchUrl(item.title, city || (map?.includes('京都') ? '京都' : '大阪')) : '');
+  const tabelogLink = tabelog ? `<a class="tabelog" href="${escapeHtml(tabelog)}" target="_blank" rel="noopener noreferrer" aria-label="${directTabelog ? '在食べログ開啟' : '在食べログ搜尋'} ${escapeHtml(item.title)}" title="${directTabelog ? '食べログ店家頁面' : '食べログ搜尋結果'}"><span class="tabelog-mark" aria-hidden="true">食</span></a>` : '';
   const title = map ? `<a class="entry-title map-title" href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(item.title)}">${escapeHtml(item.title)}</a>` : `<span class="entry-title">${escapeHtml(item.title)}</span>`;
   return `<article class="entry ${item.done ? 'done' : ''}">
     <div class="entry-marker"><button class="done-toggle" data-done="${escapeHtml(item.id)}" type="button" aria-label="${item.done ? '標記未完成' : '標記完成'}：${escapeHtml(item.title)}" aria-pressed="${Boolean(item.done)}">${icon('check')}</button></div>
     <div class="entry-main"><div class="entry-topline"><span class="category">${escapeHtml(item.category || '景點')}</span>${item.favorite ? '<span class="favorite-mark" aria-label="收藏">★</span>' : ''}</div>${title}${item.note ? `<p class="entry-note">${escapeHtml(item.note)}</p>` : ''}</div>
-    <div class="entry-actions">${map ? `<a href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="Google Maps：${escapeHtml(item.title)}">${icon('map')}</a>` : ''}${links.map((link, n) => { const url = safeUrl(link.url); const isInstagram = url.includes('instagram.com/'); return url ? `<a class="${isInstagram ? 'instagram' : 'reference'}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 的參考連結 ${n + 1}" title="${escapeHtml(link.text || '參考連結')}">${icon(isInstagram ? 'instagram' : 'link')}</a>` : ''; }).join('')}<button data-edit="${escapeHtml(item.id)}" type="button" aria-label="編輯 ${escapeHtml(item.title)}">${icon('edit')}</button></div>
+    <div class="entry-actions">${map ? `<a href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="Google Maps：${escapeHtml(item.title)}">${icon('map')}</a>` : ''}${tabelogLink}${links.map((link, n) => { const url = safeUrl(link.url); const isInstagram = url.includes('instagram.com/'); return url ? `<a class="${isInstagram ? 'instagram' : 'reference'}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 的參考連結 ${n + 1}" title="${escapeHtml(link.text || '參考連結')}">${icon(isInstagram ? 'instagram' : 'link')}</a>` : ''; }).join('')}<button data-edit="${escapeHtml(item.id)}" type="button" aria-label="編輯 ${escapeHtml(item.title)}">${icon('edit')}</button></div>
   </article>`;
 }
 
-function sectionsHtml(items) {
+function sectionsHtml(items, city = '') {
   if (!items.length) return '<div class="empty-state"><strong>這裡還沒有行程</strong><p>點選「新增行程」開始安排。</p></div>';
   const groups = [];
   for (const item of items) {
@@ -89,14 +95,14 @@ function sectionsHtml(items) {
     if (!group) { group = { title, items: [] }; groups.push(group); }
     group.items.push(item);
   }
-  return groups.map(group => `<section class="section"><h4 class="section-title">${escapeHtml(group.title)}</h4><div class="entry-list">${group.items.map(entryHtml).join('')}</div></section>`).join('');
+  return groups.map(group => `<section class="section"><h4 class="section-title">${escapeHtml(group.title)}</h4><div class="entry-list">${group.items.map(item => entryHtml(item, item.city || city)).join('')}</div></section>`).join('');
 }
 
 function renderContent() {
   const heading = $('#view-heading');
   const count = $('#view-count');
   if (search) {
-    const results = data.days.flatMap(day => day.items.map(item => ({ ...item, section: `${dateLabel(day.date)} · ${item.section || day.title}` }))).filter(item => `${item.title} ${item.note} ${item.section}`.toLocaleLowerCase().includes(search));
+    const results = data.days.flatMap(day => day.items.map(item => ({ ...item, city:day.city, section: `${dateLabel(day.date)} · ${item.section || day.title}` }))).filter(item => `${item.title} ${item.note} ${item.section}`.toLocaleLowerCase().includes(search));
     heading.textContent = '搜尋結果'; count.textContent = `${results.length} 個項目`;
     content.innerHTML = results.length ? sectionsHtml(results) : '<div class="empty-state"><strong>找不到符合的行程</strong><p>試試地點、餐廳或備註中的其他字詞。</p></div>';
     return;
@@ -104,9 +110,9 @@ function renderContent() {
   if (view === 'days') {
     const day = data.days[activeDay];
     heading.textContent = '每日行程'; count.textContent = `${day.items.length} 個項目`;
-    content.innerHTML = `<div class="day-intro"><div><span class="day-date">${escapeHtml(fullDateLabel(day.date))} · DAY ${activeDay + 1}</span><h3>${escapeHtml(day.title)}</h3></div><span class="city">${escapeHtml(day.city)}</span></div>${sectionsHtml(day.items)}`;
+    content.innerHTML = `<div class="day-intro"><div><span class="day-date">${escapeHtml(fullDateLabel(day.date))} · DAY ${activeDay + 1}</span><h3>${escapeHtml(day.title)}</h3></div><span class="city">${escapeHtml(day.city)}</span></div>${sectionsHtml(day.items, day.city)}`;
   } else if (view === 'favorites') {
-    const favorites = data.days.flatMap(day => day.items.filter(item => item.favorite).map(item => ({ ...item, section: `${dateLabel(day.date)} · ${item.section || day.title}` })));
+    const favorites = data.days.flatMap(day => day.items.filter(item => item.favorite).map(item => ({ ...item, city:day.city, section: `${dateLabel(day.date)} · ${item.section || day.title}` })));
     heading.textContent = '收藏地點'; count.textContent = `${favorites.length} 個項目`;
     content.innerHTML = favorites.length ? sectionsHtml(favorites) : '<div class="empty-state"><strong>還沒有收藏地點</strong><p>編輯行程時可將項目加入收藏。</p></div>';
   } else if (view === 'lists') {
@@ -114,7 +120,7 @@ function renderContent() {
     content.innerHTML = `<div class="list-group"><h3>出發前與旅途中</h3>${data.checklist.map(item => `<div class="checklist-item"><span>${escapeHtml(item.title)}</span><div class="link-row">${(item.links || []).map((link,n) => { const url = safeUrl(link.url); return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 參考連結 ${n + 1}">${icon(url.includes('instagram.com/') ? 'instagram' : 'link')}</a>` : ''; }).join('')}</div></div>`).join('')}</div>`;
   } else {
     heading.textContent = '共用與備份'; count.textContent = '';
-    content.innerHTML = `<div class="settings-panel"><h3>大家共用同一份行程</h3><p>不需登入。任何人新增、編輯或勾選項目後，所有開著網站的人都會即時看到更新。</p><span class="status">${icon('cloud')}${escapeHtml($('#sync-label').textContent)}</span><div class="settings-actions"><button id="export-data" type="button">下載行程備份</button><label>匯入行程備份<input id="import-data" type="file" accept="application/json,.json"></label></div><p class="settings-hint">匯入備份會取代所有人目前看到的共用行程。</p></div>`;
+    content.innerHTML = `<div class="settings-panel"><h3>大家共用同一份行程</h3><p>不需登入。任何人新增、編輯或勾選項目後，所有開著網站的人都會即時看到更新。</p><span class="status">${icon('cloud')}${escapeHtml($('#sync-label').textContent)}</span><div class="settings-actions"><button id="export-data" type="button">下載行程備份</button><label>匯入行程備份<input id="import-data" type="file" accept="application/json,.json"></label></div><p class="settings-hint">餐飲項目的橘色「食」按鈕可開啟食べログ；未指定店家的項目會顯示搜尋結果。匯入備份會取代所有人目前看到的共用行程。</p></div>`;
   }
 }
 
@@ -138,6 +144,7 @@ function openEditor(id = null) {
   form.elements.section.value = item?.section || (data.days[activeDay].items.at(-1)?.section || '行程');
   form.elements.mapQuery.value = item?.mapQuery || '';
   form.elements.igUrl.value = item?.links?.[0]?.url || '';
+  form.elements.tabelogUrl.value = item?.tabelogUrl || '';
   form.elements.note.value = item?.note || '';
   form.elements.favorite.checked = Boolean(item?.favorite);
   $('#editor-title').textContent = id ? '編輯行程' : '新增行程';
@@ -157,12 +164,15 @@ form.addEventListener('submit', event => {
   const oldLinks = existing?.item.links || [];
   const igUrl = safeUrl(form.elements.igUrl.value.trim());
   if (form.elements.igUrl.value.trim() && !igUrl) { toast('請輸入有效的 https 連結'); return; }
+  const tabelogUrl = form.elements.tabelogUrl.value.trim();
+  if (tabelogUrl && !isTabelogUrl(tabelogUrl)) { toast('請輸入 https://tabelog.com 的店家網址'); return; }
   const item = {
     id: existing?.item.id || `custom-${crypto.randomUUID()}`,
     title: form.elements.title.value.trim(),
     category: form.elements.category.value,
     section: form.elements.section.value.trim() || '行程',
     mapQuery: form.elements.mapQuery.value.trim(),
+    tabelogUrl,
     links: igUrl ? [{ text:'自訂參考連結', url:igUrl }, ...oldLinks.filter(link => link.url !== existing?.item.links?.[0]?.url)] : oldLinks.slice(1),
     note: form.elements.note.value.trim(),
     favorite: form.elements.favorite.checked,
@@ -227,7 +237,7 @@ content.addEventListener('change', async event => {
 });
 
 async function init() {
-  const response = await fetch('./itinerary.json?v=20261108e');
+  const response = await fetch('./itinerary.json?v=20261109a');
   if (!response.ok) throw new Error('行程資料載入失敗');
   const initial = await response.json();
   data = initial;
