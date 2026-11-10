@@ -1,4 +1,4 @@
-import { createSync } from './sync.js?v=20261108d';
+import { createSync } from './sync.js?v=20261110a';
 
 const $ = (selector) => document.querySelector(selector);
 const storageKey = 'osaka-kyoto-shared-2026-v1';
@@ -243,15 +243,18 @@ async function init() {
   data = initial;
   render();
   setSyncStatus('連線中');
+  const connectionTimer = setTimeout(() => {
+    if (!cloudReady && $('#sync-label').textContent === '連線中') setSyncStatus('連線逾時，請重新整理');
+  }, 12000);
   try {
     sync = await createSync({
       initial,
       onRemote: remote => { data = remote; localStorage.setItem(storageKey, JSON.stringify(data)); render(); },
-      onReady: ready => { cloudReady = ready; if (ready) render(); },
+      onReady: ready => { cloudReady = ready; if (ready) { clearTimeout(connectionTimer); render(); } },
       onStatus: status => setSyncStatus(status),
     });
     render();
-  } catch (error) { setSyncStatus('同步無法使用'); console.error(error); }
+  } catch (error) { clearTimeout(connectionTimer); setSyncStatus('同步無法使用'); console.error(error); }
 }
 init().catch(error => { content.innerHTML = `<div class="empty-state"><strong>行程無法載入</strong><p>${escapeHtml(error.message)}。請重新整理頁面。</p></div>`; });
 
