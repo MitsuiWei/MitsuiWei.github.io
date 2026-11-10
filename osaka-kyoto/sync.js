@@ -43,14 +43,30 @@ export async function createSync({ initial, onRemote, onReady, onStatus }) {
   const db = getFirestore(initializeApp(firebaseConfig));
   const ref = doc(db, 'sharedTrips', tripId);
 
-  // A transaction keeps two first visits from creating competing copies.
-  await runTransaction(db, async transaction => {
-    const snapshot = await transaction.get(ref);
-    if (!snapshot.exists()) transaction.set(ref, { data: initial, updatedAt: serverTimestamp() });
-  });
-
-  onSnapshot(ref, snapshot => {
+  let creating = false;
+  onSnapshot(ref, { includeMetadataChanges: true }, snapshot => {
     const remote = snapshot.data()?.data;
+    if (snapshot.metadata.fromCache) {
+      if (remote?.days) onRemote(remote);
+      onReady(false);
+      onStatus('離線，暫停編輯');
+      return;
+    }
+    if (!snapshot.exists()) {
+      if (creating) return;
+      creating = true;
+      onStatus('建立共用行程中');
+      // Only create the shared trip when the server confirms it does not exist.
+      runTransaction(db, async transaction => {
+        const current = await transaction.get(ref);
+        if (!current.exists()) transaction.set(ref, { data: initial, updatedAt: serverTimestamp() });
+      }).catch(error => {
+        onReady(false);
+        onStatus('同步失敗');
+        console.error(error);
+      }).finally(() => { creating = false; });
+      return;
+    }
     if (!remote?.days) { onReady(false); onStatus('共用行程無法讀取'); return; }
     onRemote(remote);
     onReady(true);
