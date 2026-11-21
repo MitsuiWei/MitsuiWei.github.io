@@ -65,3 +65,8 @@ main{padding:29px clamp(16px,5vw,52px) 0}
 @media(max-width:375px){.entry-actions a,.entry-actions button{width:27px}.entry-actions svg{width:16px;height:16px}.hero-small{letter-spacing:.08em}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 
+.section-title.editable{cursor:pointer}.section-name{min-width:0;overflow-wrap:anywhere}.section-edit{flex:0 0 auto;width:28px;height:28px;margin-left:-4px;border:0;border-radius:8px;background:transparent;color:#8aa3a2;display:grid;place-items:center;padding:0}.section-edit svg{width:15px;height:15px}.section-edit:hover{background:var(--sea);color:var(--ink-2)}
+.section-form{display:flex;flex:1;min-width:0;gap:6px;align-items:center}.section-form input{flex:1;min-width:0;height:38px;border:1px solid #9fc2ba;border-radius:9px;padding:0 10px;color:var(--ink);background:#fff;font-size:16px;font-weight:700;letter-spacing:0}.section-form button{flex:0 0 auto;height:38px;border:0;border-radius:9px;padding:0 12px;font-size:13px;font-weight:800;letter-spacing:0}.section-save{background:var(--ink);color:#fff}.section-cancel{background:#eef3f1;color:var(--ink-2)}
+.entry-list[data-section-index] .entry{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.entry.dragging{z-index:6;border-color:var(--accent);box-shadow:0 14px 34px rgba(20,63,73,.22);transition:none;will-change:transform}
+body.is-dragging,body.is-dragging *{-webkit-user-select:none;user-select:none;cursor:grabbing}

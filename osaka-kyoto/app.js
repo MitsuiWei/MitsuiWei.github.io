@@ -1,4 +1,4 @@
-import { createSync } from './sync.js?v=20261110a';
+import { createSync, applyChange } from './sync.js?v=20261121a';
 
 const $ = (selector) => document.querySelector(selector);
 const storageKey = 'osaka-kyoto-shared-2026-v1';
@@ -14,6 +14,12 @@ let editingId = null;
 let sync = null;
 let cloudReady = false;
 let toastTimer;
+let dayGroups = [];        // groups shown in the current day view, indexed by data-section-index
+let sectionEdit = null;    // index of the group whose title is being edited
+let press = null;          // pending long-press
+let drag = null;           // active drag inside one group
+let pendingRemote = false; // a cloud update arrived while editing or dragging
+let suppressClick = false;
 
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
@@ -79,15 +85,14 @@ function entryHtml(item, city = '') {
   const tabelog = directTabelog || (foodCategories.has(item.category) ? tabelogSearchUrl(item.title, city || (map?.includes('京都') ? '京都' : '大阪')) : '');
   const tabelogLink = tabelog ? `<a class="tabelog" href="${escapeHtml(tabelog)}" target="_blank" rel="noopener noreferrer" aria-label="${directTabelog ? '在食べログ開啟' : '在食べログ搜尋'} ${escapeHtml(item.title)}" title="${directTabelog ? '食べログ店家頁面' : '食べログ搜尋結果'}"><span class="tabelog-mark" aria-hidden="true">食</span></a>` : '';
   const title = map ? `<a class="entry-title map-title" href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="在 Google Maps 開啟 ${escapeHtml(item.title)}">${escapeHtml(item.title)}</a>` : `<span class="entry-title">${escapeHtml(item.title)}</span>`;
-  return `<article class="entry ${item.done ? 'done' : ''}">
+  return `<article class="entry ${item.done ? 'done' : ''}" data-id="${escapeHtml(item.id)}">
     <div class="entry-marker"><button class="done-toggle" data-done="${escapeHtml(item.id)}" type="button" aria-label="${item.done ? '標記未完成' : '標記完成'}：${escapeHtml(item.title)}" aria-pressed="${Boolean(item.done)}">${icon('check')}</button></div>
     <div class="entry-main"><div class="entry-topline"><span class="category">${escapeHtml(item.category || '景點')}</span>${item.favorite ? '<span class="favorite-mark" aria-label="收藏">★</span>' : ''}</div>${title}${item.note ? `<p class="entry-note">${escapeHtml(item.note)}</p>` : ''}</div>
     <div class="entry-actions">${map ? `<a href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="Google Maps：${escapeHtml(item.title)}">${icon('map')}</a>` : ''}${tabelogLink}${links.map((link, n) => { const url = safeUrl(link.url); const isInstagram = url.includes('instagram.com/'); return url ? `<a class="${isInstagram ? 'instagram' : 'reference'}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 的參考連結 ${n + 1}" title="${escapeHtml(link.text || '參考連結')}">${icon(isInstagram ? 'instagram' : 'link')}</a>` : ''; }).join('')}<button data-edit="${escapeHtml(item.id)}" type="button" aria-label="編輯 ${escapeHtml(item.title)}">${icon('edit')}</button></div>
   </article>`;
 }
 
-function sectionsHtml(items, city = '') {
-  if (!items.length) return '<div class="empty-state"><strong>這裡還沒有行程</strong><p>點選「新增行程」開始安排。</p></div>';
+function groupItems(items) {
   const groups = [];
   for (const item of items) {
     const title = item.section || '行程';
@@ -95,10 +100,28 @@ function sectionsHtml(items, city = '') {
     if (!group) { group = { title, items: [] }; groups.push(group); }
     group.items.push(item);
   }
-  return groups.map(group => `<section class="section"><h4 class="section-title">${escapeHtml(group.title)}</h4><div class="entry-list">${group.items.map(item => entryHtml(item, item.city || city)).join('')}</div></section>`).join('');
+  return groups;
+}
+
+// editable: day view only. Titles can be renamed and cards dragged within their group.
+function sectionsHtml(items, city = '', editable = false) {
+  if (!items.length) return '<div class="empty-state"><strong>這裡還沒有行程</strong><p>點選「新增行程」開始安排。</p></div>';
+  const groups = groupItems(items);
+  if (editable) dayGroups = groups;
+  return groups.map((group, index) => {
+    const title = editable
+      ? `<h4 class="section-title editable" data-section-title="${index}"><span class="section-name">${escapeHtml(group.title)}</span><button class="section-edit" type="button" data-section-edit="${index}" aria-label="編輯小標題：${escapeHtml(group.title)}">${icon('edit')}</button></h4>`
+      : `<h4 class="section-title">${escapeHtml(group.title)}</h4>`;
+    return `<section class="section">${title}<div class="entry-list"${editable ? ` data-section-index="${index}"` : ''}>${group.items.map(item => entryHtml(item, item.city || city)).join('')}</div></section>`;
+  }).join('');
 }
 
 function renderContent() {
+  sectionEdit = null;
+  dayGroups = [];
+  pendingRemote = false;
+  cancelPress();
+  if (drag) { cancelAnimationFrame(drag.frame); document.body.classList.remove('is-dragging'); drag = null; }
   const heading = $('#view-heading');
   const count = $('#view-count');
   if (search) {
@@ -110,7 +133,7 @@ function renderContent() {
   if (view === 'days') {
     const day = data.days[activeDay];
     heading.textContent = '每日行程'; count.textContent = `${day.items.length} 個項目`;
-    content.innerHTML = `<div class="day-intro"><div><span class="day-date">${escapeHtml(fullDateLabel(day.date))} · DAY ${activeDay + 1}</span><h3>${escapeHtml(day.title)}</h3></div><span class="city">${escapeHtml(day.city)}</span></div>${sectionsHtml(day.items, day.city)}`;
+    content.innerHTML = `<div class="day-intro"><div><span class="day-date">${escapeHtml(fullDateLabel(day.date))} · DAY ${activeDay + 1}</span><h3>${escapeHtml(day.title)}</h3></div><span class="city">${escapeHtml(day.city)}</span></div>${sectionsHtml(day.items, day.city, true)}`;
   } else if (view === 'favorites') {
     const favorites = data.days.flatMap(day => day.items.filter(item => item.favorite).map(item => ({ ...item, city:day.city, section: `${dateLabel(day.date)} · ${item.section || day.title}` })));
     heading.textContent = '收藏地點'; count.textContent = `${favorites.length} 個項目`;
@@ -236,6 +259,205 @@ content.addEventListener('change', async event => {
   } catch (error) { toast(`無法匯入：${error.message}`); }
 });
 
+// ---------- Section title editing (applies to every card in the group) ----------
+
+function startSectionEdit(index) {
+  if (!canEdit()) return;
+  const group = dayGroups[index];
+  const heading = content.querySelector(`[data-section-title="${index}"]`);
+  if (!group || !heading) return;
+  if (sectionEdit !== null) finishSectionEdit();
+  sectionEdit = index;
+  heading.innerHTML = `<form class="section-form" data-section-form="${index}"><input name="sectionName" maxlength="50" required aria-label="小標題" value="${escapeHtml(group.title)}"><button class="section-save" type="submit">儲存</button><button class="section-cancel" type="button" data-section-cancel>取消</button></form>`;
+  const input = heading.querySelector('input');
+  input.focus();
+  input.select();
+}
+
+function finishSectionEdit() {
+  sectionEdit = null;
+  render();
+}
+
+function submitSectionEdit(form) {
+  const index = Number(form.dataset.sectionForm);
+  const group = dayGroups[index];
+  const to = form.elements.sectionName.value.trim();
+  if (!group) { finishSectionEdit(); return; }
+  if (!to) { toast('小標題不能空白'); return; }
+  if (to === group.title) { finishSectionEdit(); return; }
+  if (!canEdit()) return;
+  const merged = dayGroups.some((g, n) => n !== index && g.title === to);
+  const change = { type:'renameSection', day:activeDay, from:group.title, to };
+  sectionEdit = null;
+  data = applyChange(data, change);
+  save(change);
+  toast(merged ? '已改名，並和同名小標題合併' : `已更新 ${group.items.length} 張卡片的小標題`);
+}
+
+content.addEventListener('click', event => {
+  if (event.target.closest('[data-section-cancel]')) { finishSectionEdit(); return; }
+  if (event.target.closest('.section-form')) return;
+  const trigger = event.target.closest('[data-section-edit], [data-section-title]');
+  if (!trigger) return;
+  startSectionEdit(Number(trigger.dataset.sectionEdit ?? trigger.dataset.sectionTitle));
+});
+content.addEventListener('submit', event => {
+  const form = event.target.closest('.section-form');
+  if (!form) return;
+  event.preventDefault();
+  submitSectionEdit(form);
+});
+content.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && event.target.closest('.section-form')) finishSectionEdit();
+});
+
+// ---------- Long-press drag to reorder cards inside one group ----------
+
+const LONG_PRESS_MS = 350;
+const MOVE_TOLERANCE = 8;
+const idsOf = (list) => [...list.querySelectorAll('.entry[data-id]')].map(el => el.dataset.id);
+
+function dragTarget(target) {
+  if (view !== 'days' || search || sectionEdit !== null) return null;
+  if (target.closest('.entry-actions, .done-toggle')) return null;
+  const entry = target.closest('.entry[data-id]');
+  const list = entry?.closest('.entry-list[data-section-index]');
+  return entry && list ? { entry, list } : null;
+}
+
+function pressStart(target, x, y) {
+  cancelPress();
+  const hit = dragTarget(target);
+  if (!hit) return;
+  press = { ...hit, x, y, timer: setTimeout(beginDrag, LONG_PRESS_MS) };
+}
+
+function cancelPress() {
+  if (press) clearTimeout(press.timer);
+  press = null;
+}
+
+function beginDrag() {
+  if (!press) return;
+  const { entry, list, x, y } = press;
+  press = null;
+  if (!canEdit()) return;
+  if (list.querySelectorAll('.entry').length < 2) return;
+  const rect = entry.getBoundingClientRect();
+  drag = { entry, list, x, y, grabX: x - rect.left, grabY: y - rect.top, startIds: idsOf(list), frame: 0 };
+  entry.classList.add('dragging');
+  document.body.classList.add('is-dragging');
+  navigator.vibrate?.(15);
+  drag.frame = requestAnimationFrame(dragLoop);
+}
+
+function moveDrag(x, y) {
+  drag.x = x;
+  drag.y = y;
+  updateDrag();
+}
+
+function updateDrag() {
+  const { entry, list, x, y } = drag;
+  entry.style.transform = '';
+  const own = entry.getBoundingClientRect();
+  const ownCy = own.top + own.height / 2;
+  const cards = [...list.querySelectorAll('.entry')];
+  const ownIndex = cards.indexOf(entry);
+  for (const [index, card] of cards.entries()) {
+    if (card === entry) continue;
+    const r = card.getBoundingClientRect();
+    const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+    const above = index === 0 && y < r.top;
+    const below = index === cards.length - 1 && y > r.bottom;
+    if (!inside && !above && !below) continue;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const sameRow = Math.abs(cy - ownCy) < 10;
+    // Only swap once the finger passes the middle of the card, so cards don't flicker back and forth.
+    if (index > ownIndex && (above || below || y > cy || (sameRow && x > cx))) list.insertBefore(entry, card.nextElementSibling);
+    else if (index < ownIndex && (above || below || y < cy || (sameRow && x < cx))) list.insertBefore(entry, card);
+    break;
+  }
+  const now = entry.getBoundingClientRect();
+  entry.style.transform = `translate(${x - drag.grabX - now.left}px, ${y - drag.grabY - now.top}px)`;
+}
+
+function dragLoop() {
+  if (!drag) return;
+  const edge = 90;
+  const bottom = window.innerHeight - 110; // keep clear of the bottom navigation
+  let step = 0;
+  if (drag.y < edge) step = -Math.ceil((edge - drag.y) / 6);
+  else if (drag.y > bottom) step = Math.ceil((drag.y - bottom) / 6);
+  if (step) { window.scrollBy(0, step); updateDrag(); }
+  drag.frame = requestAnimationFrame(dragLoop);
+}
+
+function endDrag(commit = true) {
+  if (!drag) return;
+  const { entry, list, startIds, frame } = drag;
+  cancelAnimationFrame(frame);
+  drag = null;
+  entry.classList.remove('dragging');
+  entry.style.transform = '';
+  document.body.classList.remove('is-dragging');
+  const group = dayGroups[Number(list.dataset.sectionIndex)];
+  const ids = idsOf(list);
+  if (commit && group && ids.join() !== startIds.join() && canEdit()) {
+    const change = { type:'reorderSection', day:activeDay, section:group.title, ids };
+    data = applyChange(data, change);
+    save(change);
+    toast('順序已調整');
+    return;
+  }
+  if (!commit || pendingRemote) render();
+}
+
+content.addEventListener('touchstart', event => {
+  if (event.touches.length !== 1) { cancelPress(); return; }
+  const touch = event.touches[0];
+  pressStart(event.target, touch.clientX, touch.clientY);
+}, { passive:true });
+document.addEventListener('touchmove', event => {
+  const touch = event.touches[0];
+  if (!touch) return;
+  if (drag) { event.preventDefault(); moveDrag(touch.clientX, touch.clientY); return; }
+  if (press && Math.hypot(touch.clientX - press.x, touch.clientY - press.y) > MOVE_TOLERANCE) cancelPress();
+}, { passive:false });
+document.addEventListener('touchend', event => {
+  cancelPress();
+  if (!drag) return;
+  event.preventDefault(); // stop the tap from opening the map link under the finger
+  endDrag(true);
+});
+document.addEventListener('touchcancel', () => { cancelPress(); endDrag(false); });
+
+content.addEventListener('mousedown', event => {
+  if (event.button !== 0) return;
+  pressStart(event.target, event.clientX, event.clientY);
+});
+document.addEventListener('mousemove', event => {
+  if (drag) { event.preventDefault(); moveDrag(event.clientX, event.clientY); return; }
+  if (press && Math.hypot(event.clientX - press.x, event.clientY - press.y) > MOVE_TOLERANCE) cancelPress();
+});
+document.addEventListener('mouseup', () => {
+  cancelPress();
+  if (!drag) return;
+  suppressClick = true;
+  setTimeout(() => { suppressClick = false; }, 0);
+  endDrag(true);
+});
+document.addEventListener('click', event => {
+  if (!suppressClick) return;
+  suppressClick = false;
+  event.preventDefault();
+  event.stopPropagation();
+}, true);
+content.addEventListener('contextmenu', event => { if (press || drag) event.preventDefault(); });
+content.addEventListener('dragstart', event => { if (press || drag) event.preventDefault(); });
+
 async function init() {
   const response = await fetch('./itinerary.json?v=20261109a');
   if (!response.ok) throw new Error('行程資料載入失敗');
@@ -249,7 +471,13 @@ async function init() {
   try {
     sync = await createSync({
       initial,
-      onRemote: remote => { data = remote; localStorage.setItem(storageKey, JSON.stringify(data)); render(); },
+      onRemote: remote => {
+        data = remote;
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        // Don't wipe an open title editor or a card being dragged; refresh when they finish.
+        if (drag || sectionEdit !== null) { pendingRemote = true; return; }
+        render();
+      },
       onReady: ready => { cloudReady = ready; if (ready) { clearTimeout(connectionTimer); render(); } },
       onStatus: status => setSyncStatus(status),
     });

@@ -10,7 +10,9 @@ function findItem(data, id) {
   return null;
 }
 
-function applyChange(data, change) {
+const sectionOf = (item) => item.section || '行程';
+
+export function applyChange(data, change) {
   if (change.type === 'replace') return structuredClone(change.data);
   const next = structuredClone(data);
   const found = change.id ? findItem(next, change.id) : null;
@@ -30,6 +32,20 @@ function applyChange(data, change) {
     if (target >= 0 && target < found.day.items.length) {
       [found.day.items[found.index], found.day.items[target]] = [found.day.items[target], found.day.items[found.index]];
     }
+  } else if (change.type === 'renameSection') {
+    // Rename one group in one day: every card whose section matches gets the new name.
+    const day = next.days[change.day];
+    if (!day) throw new Error('找不到指定日期');
+    for (const item of day.items) if (sectionOf(item) === change.from) item.section = change.to;
+  } else if (change.type === 'reorderSection') {
+    // Reorder cards inside one group only. Cards are matched by id, so edits made by
+    // someone else at the same time (new or deleted cards) are kept.
+    const day = next.days[change.day];
+    if (!day) throw new Error('找不到指定日期');
+    const inGroup = day.items.map((item, index) => ({ item, index })).filter(({ item }) => sectionOf(item) === change.section);
+    const rank = new Map(change.ids.map((id, n) => [id, n]));
+    const sorted = [...inGroup].sort((a, b) => ((rank.get(a.item.id) ?? Infinity) - (rank.get(b.item.id) ?? Infinity)) || (a.index - b.index));
+    inGroup.forEach(({ index }, n) => { day.items[index] = sorted[n].item; });
   }
   return next;
 }
