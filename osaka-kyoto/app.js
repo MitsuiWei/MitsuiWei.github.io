@@ -1,6 +1,7 @@
-import { createSync, applyChange } from './sync.js?v=20261121a';
+import { createSync, applyChange } from './sync.js?v=20261121b';
 
 const $ = (selector) => document.querySelector(selector);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
 const storageKey = 'osaka-kyoto-shared-2026-v1';
 const dayTabs = $('#day-tabs');
 const content = $('#content');
@@ -20,6 +21,14 @@ let press = null;          // pending long-press
 let drag = null;           // active drag inside one group
 let pendingRemote = false; // a cloud update arrived while editing or dragging
 let suppressClick = false;
+let listEdit = null;       // id of the list whose title is being edited
+let editingListItem = null;// { listId, itemId } open in the list editor
+let pendingImage = null;   // { dataUrl, width, height } | 'remove' | null
+let initListsRequested = false;
+const imageCache = new Map();
+const listEditor = $('#list-editor');
+const listForm = $('#list-form');
+const photoViewer = $('#photo-viewer');
 
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[char]);
@@ -118,6 +127,7 @@ function sectionsHtml(items, city = '', editable = false) {
 
 function renderContent() {
   sectionEdit = null;
+  listEdit = null;
   dayGroups = [];
   pendingRemote = false;
   cancelPress();
@@ -139,8 +149,19 @@ function renderContent() {
     heading.textContent = '收藏地點'; count.textContent = `${favorites.length} 個項目`;
     content.innerHTML = favorites.length ? sectionsHtml(favorites) : '<div class="empty-state"><strong>還沒有收藏地點</strong><p>編輯行程時可將項目加入收藏。</p></div>';
   } else if (view === 'lists') {
-    heading.textContent = '購物與參考清單'; count.textContent = `${data.checklist.length} 份清單`;
-    content.innerHTML = `<div class="list-group"><h3>出發前與旅途中</h3>${data.checklist.map(item => `<div class="checklist-item"><span>${escapeHtml(item.title)}</span><div class="link-row">${(item.links || []).map((link,n) => { const url = safeUrl(link.url); return url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(item.title)} 參考連結 ${n + 1}">${icon(url.includes('instagram.com/') ? 'instagram' : 'link')}</a>` : ''; }).join('')}</div></div>`).join('')}</div>`;
+    heading.textContent = '清單';
+    if (!Array.isArray(data.lists)) {
+      count.textContent = '';
+      content.innerHTML = '<div class="empty-state"><strong>清單準備中</strong><p>連上共用行程後會自動建立。</p></div>';
+      if (cloudReady && sync && !initListsRequested) {
+        initListsRequested = true;
+        queueMicrotask(() => { const change = { type:'initLists' }; data = applyChange(data, change); save(change); });
+      }
+      return;
+    }
+    count.textContent = `${data.lists.length} 份清單`;
+    content.innerHTML = `${data.lists.map(listHtml).join('')}<form class="new-list-form"><input name="listName" maxlength="50" required placeholder="新清單名稱，例如：藥妝" aria-label="新清單名稱"><button type="submit">${icon('plus')}新增清單</button></form>`;
+    hydrateImages();
   } else {
     heading.textContent = '共用與備份'; count.textContent = '';
     content.innerHTML = `<div class="settings-panel"><h3>大家共用同一份行程</h3><p>不需登入。任何人新增、編輯或勾選項目後，所有開著網站的人都會即時看到更新。</p><span class="status">${icon('cloud')}${escapeHtml($('#sync-label').textContent)}</span><div class="settings-actions"><button id="export-data" type="button">下載行程備份</button><label>匯入行程備份<input id="import-data" type="file" accept="application/json,.json"></label></div><p class="settings-hint">餐飲項目的橘色「食」按鈕可開啟食べログ；未指定店家的項目會顯示搜尋結果。匯入備份會取代所有人目前看到的共用行程。</p></div>`;
@@ -190,7 +211,7 @@ form.addEventListener('submit', event => {
   const tabelogUrl = form.elements.tabelogUrl.value.trim();
   if (tabelogUrl && !isTabelogUrl(tabelogUrl)) { toast('請輸入 https://tabelog.com 的店家網址'); return; }
   const item = {
-    id: existing?.item.id || `custom-${crypto.randomUUID()}`,
+    id: existing?.item.id || `custom-${uid()}`,
     title: form.elements.title.value.trim(),
     category: form.elements.category.value,
     section: form.elements.section.value.trim() || '行程',
@@ -259,6 +280,242 @@ content.addEventListener('change', async event => {
   } catch (error) { toast(`無法匯入：${error.message}`); }
 });
 
+// ---------- Lists: many lists, each with items (text, location, one photo, checkbox) ----------
+
+const linkIcons = (links, label) => (Array.isArray(links) ? links : []).map((link, n) => { const url = safeUrl(link.url); const isInstagram = url.includes('instagram.com/'); return url ? `<a class="${isInstagram ? 'instagram' : 'reference'}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" aria-label="開啟 ${escapeHtml(label)} 的參考連結 ${n + 1}" title="${escapeHtml(link.text || '參考連結')}">${icon(isInstagram ? 'instagram' : 'link')}</a>` : ''; }).join('');
+
+function listItemHtml(item) {
+  const map = item.mapQuery?.trim();
+  const label = item.title || item.note || '項目';
+  const title = item.title ? (map ? `<a class="entry-title map-title" href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title)}</a>` : `<span class="entry-title">${escapeHtml(item.title)}</span>`) : '';
+  const thumb = item.imageId ? `<button class="thumb" type="button" data-photo="${escapeHtml(item.imageId)}" aria-label="放大照片：${escapeHtml(label)}"><img data-image-id="${escapeHtml(item.imageId)}" alt=""></button>` : '';
+  return `<article class="entry list-entry ${item.done ? 'done' : ''} ${thumb ? 'has-thumb' : ''}" data-item-id="${escapeHtml(item.id)}">
+    <div class="entry-marker"><button class="done-toggle" data-list-done="${escapeHtml(item.id)}" type="button" aria-label="${item.done ? '取消打勾' : '打勾'}：${escapeHtml(label)}" aria-pressed="${Boolean(item.done)}">${icon('check')}</button></div>
+    ${thumb}
+    <div class="entry-main">${title}${item.note ? `<p class="entry-note">${escapeHtml(item.note)}</p>` : ''}</div>
+    <div class="entry-actions">${map ? `<a href="${escapeHtml(mapsUrl(map))}" target="_blank" rel="noopener noreferrer" aria-label="Google Maps：${escapeHtml(label)}">${icon('map')}</a>` : ''}${linkIcons(item.links, label)}<button data-list-item-edit="${escapeHtml(item.id)}" type="button" aria-label="編輯 ${escapeHtml(label)}">${icon('edit')}</button></div>
+  </article>`;
+}
+
+function listHtml(list) {
+  const doneCount = list.items.filter(item => item.done).length;
+  const countText = list.items.length ? `${doneCount}/${list.items.length}` : '';
+  return `<section class="list-block" data-list-id="${escapeHtml(list.id)}">
+    <div class="list-head"><h3 class="list-title" data-list-title="${escapeHtml(list.id)}"><span class="list-name">${escapeHtml(list.title)}</span>${countText ? `<span class="list-count">${countText}</span>` : ''}<button class="section-edit" type="button" data-list-edit="${escapeHtml(list.id)}" aria-label="編輯清單名稱：${escapeHtml(list.title)}">${icon('edit')}</button></h3><div class="entry-actions">${linkIcons(list.links, list.title)}</div></div>
+    <div class="entry-list list-items">${list.items.length ? list.items.map(listItemHtml).join('') : '<p class="list-empty">還沒有項目</p>'}</div>
+    <button class="list-add" type="button" data-list-add="${escapeHtml(list.id)}">${icon('plus')}新增項目</button>
+  </section>`;
+}
+
+function findListItem(itemId) {
+  for (const list of data.lists || []) {
+    const item = list.items.find(entry => entry.id === itemId);
+    if (item) return { list, item };
+  }
+  return null;
+}
+
+function setImage(img, url) {
+  if (url) { img.src = url; img.closest('.thumb')?.classList.remove('missing'); }
+  else img.closest('.thumb')?.classList.add('missing');
+}
+
+function hydrateImages() {
+  const ids = new Set([...content.querySelectorAll('img[data-image-id]')].map(img => img.dataset.imageId));
+  for (const id of ids) {
+    const apply = (url) => content.querySelectorAll(`img[data-image-id="${CSS.escape(id)}"]`).forEach(img => setImage(img, url));
+    if (imageCache.has(id)) { apply(imageCache.get(id)); continue; }
+    if (!sync) continue;
+    sync.getImage(id).then(url => { imageCache.set(id, url); apply(url); }).catch(error => { console.error(error); apply(''); });
+  }
+}
+
+function loadImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('無法讀取這張照片')); };
+    img.src = url;
+  });
+}
+
+// Shrink a phone photo to a JPEG small enough to store (well under Firestore's 1 MB document limit).
+async function compressImage(file) {
+  const img = await loadImageFile(file);
+  let maxSide = 1280;
+  let quality = 0.8;
+  for (let attempt = 0; attempt < 7; attempt++) {
+    const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+    const width = Math.max(1, Math.round(img.naturalWidth * scale));
+    const height = Math.max(1, Math.round(img.naturalHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width; canvas.height = height;
+    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+    if (dataUrl.length < 700000) return { dataUrl, width, height };
+    maxSide = Math.round(maxSide * 0.8);
+    quality = Math.max(0.5, quality - 0.07);
+  }
+  throw new Error('照片太大，請換一張');
+}
+
+function showPhotoPreview(url) {
+  const preview = $('#photo-preview');
+  preview.hidden = !url;
+  preview.querySelector('img').src = url || '';
+  $('#photo-pick-text').textContent = url ? '換一張照片' : '從相簿選擇照片';
+}
+
+function openListEditor(listId, itemId = null) {
+  if (!canEdit()) return;
+  const found = itemId ? findListItem(itemId) : null;
+  const item = found?.item;
+  editingListItem = { listId: found?.list.id || listId, itemId: item?.id || null };
+  pendingImage = null;
+  listForm.reset();
+  listForm.elements.list.innerHTML = data.lists.map(list => `<option value="${escapeHtml(list.id)}">${escapeHtml(list.title)}</option>`).join('');
+  listForm.elements.list.value = editingListItem.listId;
+  listForm.elements.title.value = item?.title || '';
+  listForm.elements.mapQuery.value = item?.mapQuery || '';
+  listForm.elements.note.value = item?.note || '';
+  $('#photo-input').value = '';
+  showPhotoPreview(item?.imageId ? imageCache.get(item.imageId) || '' : '');
+  if (item?.imageId && !imageCache.has(item.imageId)) sync.getImage(item.imageId).then(url => { imageCache.set(item.imageId, url); if (editingListItem?.itemId === item.id && !pendingImage) showPhotoPreview(url); }).catch(console.error);
+  $('#list-editor-title').textContent = item ? '編輯項目' : '新增項目';
+  $('#list-item-delete').hidden = !item;
+  $('#list-save').disabled = false;
+  $('#list-save').textContent = '儲存';
+  listEditor.showModal();
+}
+
+$('#photo-input').addEventListener('change', async event => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  try {
+    $('#photo-pick-text').textContent = '處理照片中…';
+    pendingImage = await compressImage(file);
+    showPhotoPreview(pendingImage.dataUrl);
+  } catch (error) {
+    toast(error.message);
+    showPhotoPreview($('#photo-preview').hidden ? '' : $('#photo-preview img').src);
+  }
+});
+$('#photo-remove').addEventListener('click', () => { pendingImage = 'remove'; $('#photo-input').value = ''; showPhotoPreview(''); });
+listEditor.querySelector('[data-list-close]').addEventListener('click', () => listEditor.close());
+listEditor.addEventListener('click', event => { if (event.target === listEditor) listEditor.close(); });
+
+listForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!canEdit() || !editingListItem) return;
+  const title = listForm.elements.title.value.trim();
+  const note = listForm.elements.note.value.trim();
+  const mapQuery = listForm.elements.mapQuery.value.trim();
+  const listId = listForm.elements.list.value;
+  const existing = editingListItem.itemId ? findListItem(editingListItem.itemId)?.item : null;
+  const keepsImage = pendingImage !== 'remove' && Boolean(pendingImage || existing?.imageId);
+  if (!title && !note && !keepsImage) { toast('請至少填名稱、備註或放一張照片'); return; }
+  const saveButton = $('#list-save');
+  let imageId = pendingImage === 'remove' ? '' : existing?.imageId || '';
+  if (pendingImage && pendingImage !== 'remove') {
+    saveButton.disabled = true; saveButton.textContent = '上傳照片中…';
+    try {
+      imageId = await sync.uploadImage(pendingImage);
+      imageCache.set(imageId, pendingImage.dataUrl);
+    } catch (error) {
+      console.error(error);
+      saveButton.disabled = false; saveButton.textContent = '儲存';
+      toast(error.code === 'permission-denied' ? '照片上傳失敗：Firebase 安全規則還沒更新' : `照片上傳失敗：${error.message}`);
+      return;
+    }
+  }
+  const item = { id: existing?.id || `li-${uid()}`, title, note, mapQuery, imageId, links: existing?.links || [], done: existing?.done || false };
+  const change = { type:'upsertListItem', listId, item };
+  try { data = applyChange(data, change); } catch (error) { toast(error.message); saveButton.disabled = false; saveButton.textContent = '儲存'; return; }
+  listEditor.close();
+  editingListItem = null; pendingImage = null;
+  save(change);
+  toast(existing ? '項目已更新' : '項目已新增');
+});
+
+$('#list-item-delete').addEventListener('click', () => {
+  if (!canEdit() || !editingListItem?.itemId) return;
+  const found = findListItem(editingListItem.itemId);
+  if (!found || !confirm(`確定刪除「${found.item.title || '這個項目'}」？`)) return;
+  const change = { type:'deleteListItem', itemId: found.item.id };
+  data = applyChange(data, change);
+  listEditor.close(); editingListItem = null;
+  save(change); toast('項目已刪除');
+});
+
+function startListEdit(listId) {
+  if (!canEdit()) return;
+  const list = (data.lists || []).find(l => l.id === listId);
+  const heading = content.querySelector(`[data-list-title="${CSS.escape(listId)}"]`);
+  if (!list || !heading) return;
+  listEdit = listId;
+  heading.innerHTML = `<form class="section-form list-rename-form" data-list-form="${escapeHtml(listId)}"><input name="listName" maxlength="50" required aria-label="清單名稱" value="${escapeHtml(list.title)}"><button class="section-save" type="submit">儲存</button><button class="section-cancel list-delete" type="button" data-list-delete="${escapeHtml(listId)}">刪除</button><button class="section-cancel" type="button" data-list-cancel>取消</button></form>`;
+  const input = heading.querySelector('input');
+  input.focus(); input.select();
+}
+
+content.addEventListener('click', event => {
+  if (view !== 'lists') return;
+  const photo = event.target.closest('[data-photo]');
+  if (photo) { const url = imageCache.get(photo.dataset.photo); if (url) { photoViewer.querySelector('img').src = url; photoViewer.showModal(); } return; }
+  const done = event.target.closest('[data-list-done]');
+  if (done) { if (!canEdit()) return; const found = findListItem(done.dataset.listDone); if (found) { const change = { type:'setListItemDone', itemId: found.item.id, done: !found.item.done }; data = applyChange(data, change); save(change); } return; }
+  const edit = event.target.closest('[data-list-item-edit]');
+  if (edit) { const found = findListItem(edit.dataset.listItemEdit); if (found) openListEditor(found.list.id, found.item.id); return; }
+  const add = event.target.closest('[data-list-add]');
+  if (add) { openListEditor(add.dataset.listAdd); return; }
+  if (event.target.closest('[data-list-cancel]')) { listEdit = null; render(); return; }
+  const del = event.target.closest('[data-list-delete]');
+  if (del) {
+    if (!canEdit()) return;
+    const list = (data.lists || []).find(l => l.id === del.dataset.listDelete);
+    if (!list || !confirm(`確定刪除清單「${list.title}」${list.items.length ? `和裡面 ${list.items.length} 個項目` : ''}？`)) return;
+    const change = { type:'deleteList', listId: list.id };
+    listEdit = null; data = applyChange(data, change); save(change); toast('清單已刪除');
+    return;
+  }
+  if (event.target.closest('.list-rename-form')) return;
+  const rename = event.target.closest('[data-list-edit], [data-list-title]');
+  if (rename) startListEdit(rename.dataset.listEdit ?? rename.dataset.listTitle);
+});
+
+content.addEventListener('submit', event => {
+  const renameForm = event.target.closest('.list-rename-form');
+  if (renameForm) {
+    event.preventDefault();
+    if (!canEdit()) return;
+    const listId = renameForm.dataset.listForm;
+    const title = renameForm.elements.listName.value.trim();
+    const list = (data.lists || []).find(l => l.id === listId);
+    listEdit = null;
+    if (!list || !title || title === list.title) { render(); return; }
+    const change = { type:'renameList', listId, title };
+    data = applyChange(data, change); save(change); toast('清單名稱已更新');
+    return;
+  }
+  const newForm = event.target.closest('.new-list-form');
+  if (newForm) {
+    event.preventDefault();
+    if (!canEdit()) return;
+    const title = newForm.elements.listName.value.trim();
+    if (!title) return;
+    newForm.elements.listName.blur();
+    const change = { type:'addList', list:{ id:`list-${uid()}`, title, links:[], items:[] } };
+    data = applyChange(data, change); save(change); toast(`已新增清單「${title}」`);
+  }
+});
+photoViewer.addEventListener('click', () => photoViewer.close());
+
+// Typing in an inline form on the page: hold cloud refreshes until the field loses focus.
+const typingInContent = () => content.contains(document.activeElement) && document.activeElement.matches('input, textarea');
+// The delay lets a tap on the form's own button submit first (submitting re-renders anyway).
+content.addEventListener('focusout', () => setTimeout(() => { if (pendingRemote && !drag && sectionEdit === null && listEdit === null && !typingInContent()) render(); }, 400));
+
 // ---------- Section title editing (applies to every card in the group) ----------
 
 function startSectionEdit(index) {
@@ -303,13 +560,14 @@ content.addEventListener('click', event => {
   startSectionEdit(Number(trigger.dataset.sectionEdit ?? trigger.dataset.sectionTitle));
 });
 content.addEventListener('submit', event => {
-  const form = event.target.closest('.section-form');
+  const form = event.target.closest('[data-section-form]');
   if (!form) return;
   event.preventDefault();
   submitSectionEdit(form);
 });
 content.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && event.target.closest('.section-form')) finishSectionEdit();
+  if (event.key === 'Escape' && event.target.closest('[data-section-form]')) finishSectionEdit();
+  if (event.key === 'Escape' && event.target.closest('.list-rename-form')) { listEdit = null; render(); }
 });
 
 // ---------- Long-press drag to reorder cards inside one group ----------
@@ -475,7 +733,7 @@ async function init() {
         data = remote;
         localStorage.setItem(storageKey, JSON.stringify(data));
         // Don't wipe an open title editor or a card being dragged; refresh when they finish.
-        if (drag || sectionEdit !== null) { pendingRemote = true; return; }
+        if (drag || sectionEdit !== null || listEdit !== null || typingInContent()) { pendingRemote = true; return; }
         render();
       },
       onReady: ready => { cloudReady = ready; if (ready) { clearTimeout(connectionTimer); render(); } },

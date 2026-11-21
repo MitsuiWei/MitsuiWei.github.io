@@ -1,6 +1,7 @@
 import { firebaseConfig } from './firebase-config.js?v=20261108b';
 
 const tripId = 'osaka-kyoto-2026';
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
 
 function findItem(data, id) {
   for (const day of data.days) {
@@ -46,13 +47,49 @@ export function applyChange(data, change) {
     const rank = new Map(change.ids.map((id, n) => [id, n]));
     const sorted = [...inGroup].sort((a, b) => ((rank.get(a.item.id) ?? Infinity) - (rank.get(b.item.id) ?? Infinity)) || (a.index - b.index));
     inGroup.forEach(({ index }, n) => { day.items[index] = sorted[n].item; });
+  } else if (change.type === 'initLists') {
+    // One-time upgrade: each old checklist entry becomes its own list, keeping its links.
+    if (!Array.isArray(next.lists)) {
+      next.lists = (next.checklist || []).map((entry, n) => ({ id: entry.id || `list-${n}`, title: entry.title || '清單', links: entry.links || [], items: [] }));
+    }
+  } else if (change.type === 'addList') {
+    if (!Array.isArray(next.lists)) next.lists = [];
+    if (!next.lists.some(list => list.id === change.list.id)) next.lists.push(change.list);
+  } else if (change.type === 'renameList') {
+    const list = (next.lists || []).find(l => l.id === change.listId);
+    if (list) list.title = change.title;
+  } else if (change.type === 'deleteList') {
+    next.lists = (next.lists || []).filter(l => l.id !== change.listId);
+  } else if (change.type === 'upsertListItem') {
+    const lists = next.lists || [];
+    const target = lists.find(l => l.id === change.listId);
+    if (!target) throw new Error('找不到這份清單，可能已被刪除');
+    let oldList = null;
+    let oldIndex = -1;
+    for (const list of lists) {
+      const index = list.items.findIndex(item => item.id === change.item.id);
+      if (index !== -1) { oldList = list; oldIndex = index; break; }
+    }
+    if (oldList) oldList.items.splice(oldIndex, 1);
+    if (oldList === target) target.items.splice(oldIndex, 0, change.item);
+    else target.items.push(change.item);
+  } else if (change.type === 'deleteListItem') {
+    for (const list of next.lists || []) {
+      const index = list.items.findIndex(item => item.id === change.itemId);
+      if (index !== -1) { list.items.splice(index, 1); break; }
+    }
+  } else if (change.type === 'setListItemDone') {
+    for (const list of next.lists || []) {
+      const item = list.items.find(entry => entry.id === change.itemId);
+      if (item) { item.done = change.done; break; }
+    }
   }
   return next;
 }
 
 export async function createSync({ initial, onRemote, onReady, onStatus }) {
   if (!firebaseConfig?.apiKey || !firebaseConfig?.projectId) throw new Error('雲端設定不完整');
-  const [{ initializeApp }, { getFirestore, doc, getDoc, onSnapshot, runTransaction, serverTimestamp }] = await Promise.all([
+  const [{ initializeApp }, { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction, serverTimestamp }] = await Promise.all([
     import('https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js'),
     import('https://www.gstatic.com/firebasejs/13.2.0/firebase-firestore.js'),
   ]);
@@ -103,6 +140,16 @@ export async function createSync({ initial, onRemote, onReady, onStatus }) {
     refresh: async () => {
       const snapshot = await getDoc(ref);
       if (snapshot.exists() && snapshot.data()?.data?.days) onRemote(snapshot.data().data);
+    },
+    // Photos live in their own documents (the itinerary document has a 1 MB limit).
+    uploadImage: async ({ dataUrl, width, height }) => {
+      const id = `img-${uid()}`;
+      await setDoc(doc(db, 'sharedTripImages', id), { trip: tripId, data: dataUrl, width, height, createdAt: serverTimestamp() });
+      return id;
+    },
+    getImage: async (id) => {
+      const snapshot = await getDoc(doc(db, 'sharedTripImages', id));
+      return snapshot.exists() ? snapshot.data().data || '' : '';
     },
   };
 }

@@ -7,7 +7,7 @@
   <meta name="description" content="2026 大阪與京都旅行行程，快速查看每日安排、地圖與 IG 收藏。">
   <title>大阪・京都旅行 | 2026 行程</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./styles.css?v=20261121a">
+  <link rel="stylesheet" href="./styles.css?v=20261121b">
 </head>
 <body>
   <svg class="icons" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -68,8 +68,26 @@
       <div class="form-actions"><button id="delete-button" class="delete-button" type="button">刪除</button><button id="move-up" class="move-button" type="button">上移</button><button id="move-down" class="move-button" type="button">下移</button><button class="save-button" type="submit">儲存變更</button></div>
     </form>
   </dialog>
+  <dialog id="list-editor" class="editor">
+    <form id="list-form" method="dialog">
+      <div class="dialog-top"><h2 id="list-editor-title">新增項目</h2><button class="icon-button" type="button" data-list-close aria-label="關閉"><svg><use href="#i-close"/></svg></button></div>
+      <div class="form-scroll">
+        <label>名稱<input name="title" maxlength="100" placeholder="例如：EVE 止痛藥"></label>
+        <label>放在哪份清單<select name="list"></select></label>
+        <div class="photo-field">
+          <span class="photo-label">照片</span>
+          <div id="photo-preview" class="photo-preview" hidden><img alt="照片預覽"><button id="photo-remove" type="button">移除照片</button></div>
+          <label class="photo-pick"><span id="photo-pick-text">從相簿選擇照片</span><input id="photo-input" type="file" accept="image/*"></label>
+        </div>
+        <label>地點（Google Maps 搜尋文字）<input name="mapQuery" maxlength="160" placeholder="例如：松本清 心斎橋店"></label>
+        <label>備註<textarea name="note" rows="3" maxlength="500" placeholder="價格、數量、要買給誰…"></textarea></label>
+      </div>
+      <div class="form-actions"><button id="list-item-delete" class="delete-button" type="button">刪除</button><button id="list-save" class="save-button" type="submit">儲存</button></div>
+    </form>
+  </dialog>
+  <dialog id="photo-viewer" class="photo-viewer" aria-label="照片"><img alt=""></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./app.js?v=20261121a"></script>
+  <script type="module" src="./app.js?v=20261121b"></script>
 </body>
 </html>
 
