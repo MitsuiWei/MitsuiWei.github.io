@@ -1,4 +1,4 @@
-import { createSync, applyChange } from './sync.js?v=20261121b';
+import { createSync, applyChange } from './sync.js?v=20261121c';
 
 const $ = (selector) => document.querySelector(selector);
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
@@ -386,8 +386,23 @@ function openListEditor(listId, itemId = null) {
   $('#list-item-delete').hidden = !item;
   $('#list-save').disabled = false;
   $('#list-save').textContent = '儲存';
+  showListError('');
   listEditor.showModal();
 }
+
+function showListError(message) {
+  const box = $('#list-error');
+  box.hidden = !message;
+  box.querySelector('p').textContent = message;
+}
+
+$('#list-save-without-photo').addEventListener('click', () => {
+  const existing = editingListItem?.itemId ? findListItem(editingListItem.itemId)?.item : null;
+  pendingImage = existing?.imageId ? null : 'remove';
+  showPhotoPreview(existing?.imageId ? imageCache.get(existing.imageId) || '' : '');
+  showListError('');
+  listForm.requestSubmit();
+});
 
 $('#photo-input').addEventListener('change', async event => {
   const file = event.target.files?.[0];
@@ -420,12 +435,12 @@ listForm.addEventListener('submit', async event => {
   if (pendingImage && pendingImage !== 'remove') {
     saveButton.disabled = true; saveButton.textContent = '上傳照片中…';
     try {
-      imageId = await sync.uploadImage(pendingImage);
+      imageId = await Promise.race([sync.uploadImage(pendingImage), new Promise((_, reject) => setTimeout(() => reject(new Error('上傳逾時，請確認網路後再試')), 30000))]);
       imageCache.set(imageId, pendingImage.dataUrl);
     } catch (error) {
       console.error(error);
       saveButton.disabled = false; saveButton.textContent = '儲存';
-      toast(error.code === 'permission-denied' ? '照片上傳失敗：Firebase 安全規則還沒更新' : `照片上傳失敗：${error.message}`);
+      showListError(error.code === 'permission-denied' ? '照片上傳失敗：雲端拒絕存照片（Firebase 安全規則還沒更新）。' : `照片上傳失敗：${error.message}`);
       return;
     }
   }
