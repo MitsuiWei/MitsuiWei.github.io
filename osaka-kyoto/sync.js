@@ -13,6 +13,25 @@ function findItem(data, id) {
 
 const sectionOf = (item) => item.section || '行程';
 
+// Number at the start of a section title: ⓪, ①–⑳, ➀–➉, ❶–❿ or plain digits. Unnumbered groups go last.
+function sectionRank(section) {
+  const text = String(section || '').trim();
+  const c = text.codePointAt(0) || 0;
+  if (c === 0x24EA) return 0;                                 // ⓪
+  if (c >= 0x2460 && c <= 0x2473) return c - 0x2460 + 1;      // ①–⑳
+  if (c >= 0x2780 && c <= 0x2789) return c - 0x2780 + 1;      // ➀–➉
+  if (c >= 0x2776 && c <= 0x277F) return c - 0x2776 + 1;      // ❶–❿
+  const digits = text.match(/^\d+/);
+  return digits ? Number(digits[0]) : Infinity;
+}
+
+// Stable sort: groups follow their circled number; cards keep their order inside each group.
+function sortDayBySection(day) {
+  day.items = day.items.map((item, index) => ({ item, index }))
+    .sort((a, b) => (sectionRank(a.item.section) - sectionRank(b.item.section)) || (a.index - b.index))
+    .map(({ item }) => item);
+}
+
 export function applyChange(data, change) {
   if (change.type === 'replace') return structuredClone(change.data);
   const next = structuredClone(data);
@@ -21,9 +40,12 @@ export function applyChange(data, change) {
     const target = next.days[change.day];
     if (!target) throw new Error('找不到指定日期');
     const old = findItem(next, change.item.id);
+    const oldSection = old ? old.day.items[old.index].section : null;
     if (old) old.day.items.splice(old.index, 1);
     if (old?.day === target) target.items.splice(old.index, 0, change.item);
     else target.items.push(change.item);
+    // New card, moved to another day, or its group title changed: put it with its numbered group.
+    if (!old || old.day !== target || oldSection !== change.item.section) sortDayBySection(target);
   } else if (change.type === 'delete' && found) {
     found.day.items.splice(found.index, 1);
   } else if (change.type === 'setDone' && found) {
@@ -38,6 +60,7 @@ export function applyChange(data, change) {
     const day = next.days[change.day];
     if (!day) throw new Error('找不到指定日期');
     for (const item of day.items) if (sectionOf(item) === change.from) item.section = change.to;
+    sortDayBySection(day);
   } else if (change.type === 'reorderSection') {
     // Reorder cards inside one group only. Cards are matched by id, so edits made by
     // someone else at the same time (new or deleted cards) are kept.
